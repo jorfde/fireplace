@@ -10,6 +10,8 @@ final class DockTileRenderer {
     private var frameIndex: Int = 0
     private var animationTimer: Timer?
 
+    private let iconSize: CGFloat = 1024
+
     func updateState(_ state: FireplaceAnimationState, marshmallow: Bool = false, streak: Int = 0) {
         currentState = state
         showMarshmallow = marshmallow
@@ -41,21 +43,20 @@ final class DockTileRenderer {
     }
 
     private func renderFrame() {
-        let image = renderFireplaceToImage()
+        let image = renderIconImage()
         NSApp.applicationIconImage = image
     }
 
-    private func renderFireplaceToImage() -> NSImage {
-        let size: CGFloat = 128
+    private func renderIconImage() -> NSImage {
         let renderer = ImageRenderer(content:
-            FireplaceCanvasView(state: currentState, showMarshmallow: showMarshmallow, streakDays: streakDays)
-                .frame(width: size, height: size)
+            DockIconCanvasView(state: currentState, showMarshmallow: showMarshmallow, streakDays: streakDays)
+                .frame(width: iconSize, height: iconSize)
         )
-        renderer.scale = 2.0
+        renderer.scale = 1.0
 
         if let cgImage = renderer.cgImage {
-            return NSImage(cgImage: cgImage, size: CGSize(width: size, height: size))
+            return NSImage(cgImage: cgImage, size: CGSize(width: iconSize, height: iconSize))
         }
-        return NSImage(size: CGSize(width: size, height: size))
+        return NSImage(size: CGSize(width: iconSize, height: iconSize))
     }
 }
