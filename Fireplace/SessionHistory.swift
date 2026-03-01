@@ -38,9 +38,10 @@ final class SessionHistory {
     }
 
     func record(_ session: FocusSession, finished: Bool, journal: String) {
+        let actualDuration = min(Date.now.timeIntervalSince(session.startTime), session.duration)
         let record = SessionRecord(
             taskName: session.taskName,
-            duration: session.duration,
+            duration: actualDuration,
             finished: finished,
             journalEntry: journal
         )
