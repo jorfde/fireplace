@@ -10,6 +10,11 @@ final class DockTileRenderer {
     private var frameIndex: Int = 0
     private var animationTimer: Timer?
 
+    // Icon spec: 1024×1024 canvas, 880×880 plate centered, ~190px corner radius
+    private let canvasSize: CGFloat = 1024
+    private let plateSize: CGFloat = 880
+    private let plateRadius: CGFloat = 190
+
     func updateState(_ state: FireplaceAnimationState, marshmallow: Bool = false, streak: Int = 0) {
         currentState = state
         showMarshmallow = marshmallow
@@ -42,22 +47,33 @@ final class DockTileRenderer {
 
     private func renderFrame() {
         let image = renderIconImage()
-        let imageView = NSImageView(image: image)
-        NSApp.dockTile.contentView = imageView
-        NSApp.dockTile.display()
+        NSApp.applicationIconImage = image
     }
 
     private func renderIconImage() -> NSImage {
-        let size: CGFloat = 128
+        // Render the scene at plate size
         let renderer = ImageRenderer(content:
             DockIconCanvasView(state: currentState, showMarshmallow: showMarshmallow, streakDays: streakDays)
-                .frame(width: size, height: size)
+                .frame(width: plateSize, height: plateSize)
+                .clipShape(RoundedRectangle(cornerRadius: plateRadius, style: .continuous))
         )
-        renderer.scale = 2.0
+        renderer.scale = 1.0
+
+        // Composite onto 1024×1024 transparent canvas, centered
+        let finalImage = NSImage(size: CGSize(width: canvasSize, height: canvasSize))
+        finalImage.lockFocus()
+
+        // Clear to transparent
+        NSColor.clear.set()
+        NSRect(x: 0, y: 0, width: canvasSize, height: canvasSize).fill()
 
         if let cgImage = renderer.cgImage {
-            return NSImage(cgImage: cgImage, size: CGSize(width: size, height: size))
+            let plateImage = NSImage(cgImage: cgImage, size: CGSize(width: plateSize, height: plateSize))
+            let inset = (canvasSize - plateSize) / 2
+            plateImage.draw(in: NSRect(x: inset, y: inset, width: plateSize, height: plateSize))
         }
-        return NSImage(size: CGSize(width: size, height: size))
+
+        finalImage.unlockFocus()
+        return finalImage
     }
 }
