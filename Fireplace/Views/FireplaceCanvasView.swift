@@ -12,6 +12,7 @@ struct FireplaceCanvasView: View {
     let state: FireplaceAnimationState
     var showMarshmallow: Bool = false
     var streakDays: Int = 0
+    var timeProgress: Double = 0
 
     private let fps: Double = 4
     private let gridSize: Int = 16
@@ -108,13 +109,17 @@ struct FireplaceCanvasView: View {
     }
 
     private func drawStars(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, glow: Bool, frame: Int) {
-        let positions: [(Int, Int)] = [(2, 1), (12, 2), (5, 3), (14, 0), (9, 1), (0, 4)]
-        for (i, (x, y)) in positions.enumerated() {
+        // Stars drift slowly based on session progress
+        let drift = Int(timeProgress * 6)
+        let basePositions: [(Int, Int)] = [(2, 1), (12, 2), (5, 3), (14, 0), (9, 1), (0, 4)]
+        for (i, (bx, y)) in basePositions.enumerated() {
+            let x = (bx + drift + i) % gridSize
             let twinkle = (frame + i) % 4 == 0
             p(ctx, x, y, cw, ch, star.opacity(twinkle ? 0.5 : 0.85))
         }
         if glow {
-            p(ctx, 2, 1, cw, ch, star.opacity(frame % 2 == 0 ? 1.0 : 0.7))
+            let gx = (2 + drift) % gridSize
+            p(ctx, gx, 1, cw, ch, star.opacity(frame % 2 == 0 ? 1.0 : 0.7))
         }
     }
 
@@ -263,9 +268,12 @@ struct FireplaceCanvasView: View {
         p(ctx, 12, 12, cw, ch, warmGlow.opacity(0.08))
     }
 
-    // MARK: - Fire (burning)
+    // MARK: - Fire (burning) — shrinks in last 20% of session
 
     private func drawFire(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
+        // Fire intensity: full until 80%, then linearly decreases to 0.4
+        let intensity = timeProgress < 0.8 ? 1.0 : max(0.4, 1.0 - (timeProgress - 0.8) / 0.2 * 0.6)
+
         for x in 6...9 {
             p(ctx, x, 11, cw, ch, frame % 2 == 0 ? emberBright : flameOrange)
         }
@@ -276,7 +284,7 @@ struct FireplaceCanvasView: View {
             [(5, 10), (9, 10), (6, 9), (10, 9), (10, 10), (6, 10)],
             [(6, 10), (10, 10), (5, 10), (9, 10), (5, 9), (10, 9)],
         ]
-        for (x, y) in redFrames[frame % 4] { p(ctx, x, y, cw, ch, flameRed) }
+        for (x, y) in redFrames[frame % 4] { p(ctx, x, y, cw, ch, flameRed.opacity(intensity)) }
 
         let orangeFrames: [[(Int, Int)]] = [
             [(7, 10), (8, 10), (6, 9), (9, 9), (7, 9), (8, 9), (7, 8), (8, 8)],
@@ -284,7 +292,7 @@ struct FireplaceCanvasView: View {
             [(7, 10), (8, 10), (6, 9), (9, 9), (7, 9), (8, 9), (6, 8), (8, 8)],
             [(7, 10), (8, 10), (7, 9), (8, 9), (6, 9), (9, 9), (9, 8), (7, 8)],
         ]
-        for (x, y) in orangeFrames[frame % 4] { p(ctx, x, y, cw, ch, flameOrange) }
+        for (x, y) in orangeFrames[frame % 4] { p(ctx, x, y, cw, ch, flameOrange.opacity(intensity)) }
 
         let yellowFrames: [[(Int, Int)]] = [
             [(7, 9), (8, 9), (7, 8), (8, 7)],
@@ -292,19 +300,23 @@ struct FireplaceCanvasView: View {
             [(8, 9), (7, 8), (8, 8), (8, 7), (7, 7)],
             [(7, 9), (8, 8), (7, 8), (7, 7)],
         ]
-        for (x, y) in yellowFrames[frame % 4] { p(ctx, x, y, cw, ch, flameYellow) }
+        for (x, y) in yellowFrames[frame % 4] { p(ctx, x, y, cw, ch, flameYellow.opacity(intensity)) }
 
         let whitePositions: [(Int, Int)] = [(7, 8), (8, 7), (8, 8), (7, 7)]
         let (wx, wy) = whitePositions[frame % 4]
-        p(ctx, wx, wy, cw, ch, flameWhite)
+        p(ctx, wx, wy, cw, ch, flameWhite.opacity(intensity))
 
-        let tips: [[(Int, Int, Color)]] = [
-            [(7, 6, flameYellow), (8, 5, flameOrange), (7, 4, flameRed)],
-            [(8, 6, flameYellow), (7, 5, flameOrange), (8, 4, flameRed)],
-            [(7, 6, flameYellow), (8, 6, flameOrange), (7, 5, flameOrange), (8, 4, flameRed)],
-            [(8, 6, flameYellow), (7, 6, flameOrange), (8, 5, flameOrange), (7, 4, flameRed)],
-        ]
-        for (x, y, c) in tips[frame % 4] { p(ctx, x, y, cw, ch, c) }
+        // Tips only show when intensity > 0.6
+        if intensity > 0.6 {
+            let tipAlpha = (intensity - 0.6) / 0.4
+            let tips: [[(Int, Int, Color)]] = [
+                [(7, 6, flameYellow), (8, 5, flameOrange), (7, 4, flameRed)],
+                [(8, 6, flameYellow), (7, 5, flameOrange), (8, 4, flameRed)],
+                [(7, 6, flameYellow), (8, 6, flameOrange), (7, 5, flameOrange), (8, 4, flameRed)],
+                [(8, 6, flameYellow), (7, 6, flameOrange), (8, 5, flameOrange), (7, 4, flameRed)],
+            ]
+            for (x, y, c) in tips[frame % 4] { p(ctx, x, y, cw, ch, c.opacity(tipAlpha)) }
+        }
     }
 
     // MARK: - Sparks

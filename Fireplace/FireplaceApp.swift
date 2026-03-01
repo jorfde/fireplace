@@ -6,7 +6,7 @@ struct FireplaceApp: App {
 
     var body: some Scene {
         Settings {
-            SettingsView(appState: appDelegate.appState)
+            SettingsView(appState: appDelegate.appState, soundEngine: appDelegate.soundEngine)
         }
     }
 }
@@ -17,7 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var panelController: PanelController?
     let focusTimer = FocusTimer()
     let dockTileRenderer = DockTileRenderer()
-    let cracklingSound = CracklingSound()
+    let soundEngine = AmbientSoundEngine()
     let menuBarCompanion = MenuBarCompanion()
     private var observation: Any?
     private var transitionTimer: Timer?
@@ -58,7 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch appState.phase {
         case .idle:
             focusTimer.stop()
-            cracklingSound.stop()
+            soundEngine.stop()
             menuBarCompanion.showIdle()
             transitionTimer?.invalidate()
             dockTileRenderer.updateState(.idle, marshmallow: false, streak: appState.streakDays)
@@ -73,12 +73,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         case .focusing(let session):
             focusTimer.start(duration: session.duration)
-            if appState.soundEnabled { cracklingSound.play() }
+            if appState.soundEnabled { soundEngine.play() }
             menuBarCompanion.show(taskName: session.taskName, timer: focusTimer)
             dockTileRenderer.updateState(.burning, marshmallow: appState.isMarshmallow, streak: appState.streakDays)
 
         case .dyingDown:
-            cracklingSound.stop()
+            soundEngine.stop()
             dockTileRenderer.updateState(.dyingDown(progress: 0), marshmallow: false, streak: appState.streakDays)
             animateTransition(duration: 1.5, from: 0, to: 1) { [weak self] progress in
                 self?.dockTileRenderer.updateState(.dyingDown(progress: progress), marshmallow: false, streak: self?.appState.streakDays ?? 0)

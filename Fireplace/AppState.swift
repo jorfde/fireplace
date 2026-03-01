@@ -33,6 +33,7 @@ final class AppState {
     var selectedDuration: Int = 25
     var journalEntry: String = ""
     var soundEnabled: Bool = true
+    let sessionHistory = SessionHistory()
 
     var availableDurations: [Int] { [15, 25, 45, 60] }
 
