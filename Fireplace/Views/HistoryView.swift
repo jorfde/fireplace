@@ -43,7 +43,7 @@ struct HistoryView: View {
             HStack {
                 Button(action: onBack) {
                     Label("Back", systemImage: "chevron.left")
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .rounded))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
@@ -51,7 +51,7 @@ struct HistoryView: View {
                 Spacer()
 
                 Text("History")
-                    .font(.headline)
+                    .font(.system(.headline, design: .rounded))
 
                 Spacer()
 
@@ -64,7 +64,7 @@ struct HistoryView: View {
             if sessions.isEmpty {
                 Spacer()
                 Text("No sessions yet")
-                    .font(.subheadline)
+                    .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(.tertiary)
                 Spacer()
             } else {
@@ -76,7 +76,7 @@ struct HistoryView: View {
                         ForEach(Array(groupedByDay.enumerated()), id: \.offset) { _, group in
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(group.0)
-                                    .font(.caption.weight(.semibold))
+                                    .font(.system(.caption, design: .rounded, weight: .semibold))
                                     .foregroundStyle(.secondary)
                                     .padding(.horizontal, 4)
 
@@ -156,7 +156,7 @@ struct DotCalendarView: View {
         VStack(spacing: 6) {
             HStack {
                 Text(monthLabel)
-                    .font(.caption2.weight(.medium))
+                    .font(.system(.caption2, design: .rounded, weight: .medium))
                     .foregroundStyle(.tertiary)
                 Spacer()
             }
@@ -223,26 +223,26 @@ struct SessionRow: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(session.taskName)
-                    .font(.subheadline.weight(.medium))
+                    .font(.system(.subheadline, design: .rounded, weight: .medium))
                     .lineLimit(1)
 
                 Spacer()
 
                 Text(session.finished ? "\u{2713}" : "\u{2717}")
-                    .font(.caption)
+                    .font(.system(.caption, design: .rounded))
                     .foregroundStyle(session.finished ? .green : .secondary)
             }
 
             HStack {
                 Text(dateString)
-                    .font(.caption2)
+                    .font(.system(.caption2, design: .rounded))
                     .foregroundStyle(.tertiary)
 
                 Text("\u{00B7}")
                     .foregroundStyle(.quaternary)
 
                 Text("\(session.durationMinutes)m")
-                    .font(.caption2)
+                    .font(.system(.caption2, design: .rounded))
                     .foregroundStyle(.tertiary)
 
                 if !session.journalEntry.isEmpty {
@@ -250,7 +250,7 @@ struct SessionRow: View {
                         .foregroundStyle(.quaternary)
 
                     Text(session.journalEntry)
-                        .font(.caption2)
+                        .font(.system(.caption2, design: .rounded))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }

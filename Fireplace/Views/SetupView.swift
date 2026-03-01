@@ -41,12 +41,12 @@ struct SetupView: View {
             VStack(spacing: 16) {
                 VStack(spacing: 10) {
                     Text("What\u{2019}s on your mind?")
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .rounded))
                         .foregroundStyle(.secondary)
 
                     TextField("Name your task", text: $appState.draftTaskName)
                         .textFieldStyle(.plain)
-                        .font(.body)
+                        .font(.system(.body, design: .rounded))
                         .padding(8)
                         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
                         .focused($focusedField, equals: .taskName)
@@ -83,7 +83,7 @@ struct SetupView: View {
 
                 if appState.streakDays > 0 {
                     Text("\(appState.streakDays) day streak \u{1F525}")
-                        .font(.caption)
+                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(.tertiary)
                 }
             }

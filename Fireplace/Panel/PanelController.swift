@@ -147,7 +147,7 @@ struct TransitionView: View {
                 .padding(.top, 4)
 
             Text(label)
-                .font(.headline)
+                .font(.system(.headline, design: .rounded))
                 .foregroundStyle(.secondary)
                 .padding(20)
         }
@@ -185,7 +185,7 @@ struct FocusingView: View {
 
             VStack(spacing: 14) {
                 Text(taskName)
-                    .font(.headline)
+                    .font(.system(.headline, design: .rounded))
                     .lineLimit(1)
 
                 ZStack {
@@ -207,11 +207,11 @@ struct FocusingView: View {
                 HStack(spacing: 0) {
                     Button("Extinguish") { appState.extinguishEarly() }
                         .buttonStyle(.plain)
-                        .font(.caption)
+                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(.tertiary)
 
                     Text(" \u{00B7} ")
-                        .font(.caption)
+                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(.quaternary)
 
                     Button(action: { appState.soundEnabled.toggle() }) {
@@ -223,12 +223,12 @@ struct FocusingView: View {
                     .help(appState.soundEnabled ? "Mute" : "Unmute")
 
                     Text(" \u{00B7} ")
-                        .font(.caption)
+                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(.quaternary)
 
                     Button("Hide") { onClose() }
                         .buttonStyle(.plain)
-                        .font(.caption)
+                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -280,7 +280,7 @@ struct CompletionView: View {
                         .offset(y: textVisible ? 0 : 8)
 
                     Text("\u{201C}\(taskName)\u{201D}")
-                        .font(.caption)
+                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -288,7 +288,7 @@ struct CompletionView: View {
                 if showKeepGoing {
                     VStack(spacing: 10) {
                         Text("Add more time")
-                            .font(.caption)
+                            .font(.system(.caption, design: .rounded))
                             .foregroundStyle(.secondary)
 
                         HStack(spacing: 8) {
@@ -341,12 +341,12 @@ struct CompletionView: View {
 
                     VStack(spacing: 6) {
                         Text("Any thoughts?")
-                            .font(.caption)
+                            .font(.system(.caption, design: .rounded))
                             .foregroundStyle(.tertiary)
 
                         TextField("One sentence...", text: $appState.journalEntry)
                             .textFieldStyle(.plain)
-                            .font(.caption)
+                            .font(.system(.caption, design: .rounded))
                             .padding(6)
                             .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 5))
                             .focused($isJournalFocused)
