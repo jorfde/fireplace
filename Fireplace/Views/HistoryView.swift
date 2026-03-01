@@ -99,46 +99,14 @@ struct HistoryView: View {
 struct DotCalendarView: View {
     let sessions: [SessionRecord]
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
-    private let dayLabels = ["M", "T", "W", "T", "F", "S", "S"]
+    private let cols = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
 
-    private var calendarDays: [CalendarDay] {
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: .now)
-
-        // Go back 29 days (30 days total including today)
-        guard let startDate = cal.date(byAdding: .day, value: -29, to: today) else { return [] }
-
-        // Find the Monday on or before startDate for grid alignment
-        let startWeekday = cal.component(.weekday, from: startDate)
-        // weekday: 1=Sun, 2=Mon... Convert to Mon=0
-        let mondayOffset = (startWeekday + 5) % 7
-        guard let gridStart = cal.date(byAdding: .day, value: -mondayOffset, to: startDate) else { return [] }
-
-        var days: [CalendarDay] = []
-        var current = gridStart
-
-        // Fill grid until we pass today
-        while current <= today {
-            let count = sessionCount(for: current)
-            let inRange = current >= startDate && current <= today
-            let isToday = cal.isDateInToday(current)
-            let dayNum = cal.component(.day, from: current)
-            let month = cal.component(.month, from: current)
-
-            days.append(CalendarDay(
-                date: current,
-                dayNumber: dayNum,
-                month: month,
-                sessionCount: count,
-                inRange: inRange,
-                isToday: isToday
-            ))
-
-            current = cal.date(byAdding: .day, value: 1, to: current)!
-        }
-
-        return days
+    private struct Cell: Identifiable {
+        let id: Int
+        let dayNumber: Int
+        let sessionCount: Int
+        let isToday: Bool
+        let isEmpty: Bool
     }
 
     private var monthLabel: String {
@@ -150,17 +118,37 @@ struct DotCalendarView: View {
         let startMonth = fmt.string(from: start)
         let endMonth = fmt.string(from: today)
         let year = cal.component(.year, from: today)
-        if startMonth == endMonth {
-            return "\(startMonth) \(year)"
-        }
-        return "\(startMonth) – \(endMonth) \(year)"
+        return startMonth == endMonth ? "\(startMonth) \(year)" : "\(startMonth) – \(endMonth) \(year)"
     }
 
-    private func sessionCount(for date: Date) -> Int {
+    private var cells: [Cell] {
         let cal = Calendar.current
-        let dayStart = cal.startOfDay(for: date)
-        let dayEnd = cal.date(byAdding: .day, value: 1, to: dayStart)!
-        return sessions.filter { $0.date >= dayStart && $0.date < dayEnd }.count
+        let today = cal.startOfDay(for: .now)
+        guard let rangeStart = cal.date(byAdding: .day, value: -29, to: today) else { return [] }
+
+        // Weekday of rangeStart: convert to Mon=0..Sun=6
+        let wd = cal.component(.weekday, from: rangeStart) // 1=Sun..7=Sat
+        let mondayIndex = (wd + 5) % 7 // Mon=0, Tue=1, ..., Sun=6
+
+        var result: [Cell] = []
+
+        // Leading empty cells to align first day to correct column
+        for i in 0..<mondayIndex {
+            result.append(Cell(id: -(i + 1), dayNumber: 0, sessionCount: 0, isToday: false, isEmpty: true))
+        }
+
+        // 30 actual days
+        for offset in 0..<30 {
+            guard let date = cal.date(byAdding: .day, value: offset, to: rangeStart) else { continue }
+            let dayStart = cal.startOfDay(for: date)
+            let dayEnd = cal.date(byAdding: .day, value: 1, to: dayStart)!
+            let count = sessions.filter { $0.date >= dayStart && $0.date < dayEnd }.count
+            let dayNum = cal.component(.day, from: date)
+            let isToday = cal.isDateInToday(date)
+            result.append(Cell(id: offset, dayNumber: dayNum, sessionCount: count, isToday: isToday, isEmpty: false))
+        }
+
+        return result
     }
 
     var body: some View {
@@ -172,35 +160,35 @@ struct DotCalendarView: View {
                 Spacer()
             }
 
-            // Day-of-week headers
-            LazyVGrid(columns: columns, spacing: 2) {
-                ForEach(dayLabels, id: \.self) { label in
+            // Weekday headers
+            HStack(spacing: 2) {
+                ForEach(["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"], id: \.self) { label in
                     Text(label)
                         .font(.system(size: 8, weight: .medium, design: .rounded))
                         .foregroundStyle(.quaternary)
-                        .frame(height: 12)
+                        .frame(maxWidth: .infinity)
                 }
             }
 
             // Calendar grid
-            LazyVGrid(columns: columns, spacing: 3) {
-                ForEach(calendarDays) { day in
-                    if day.inRange {
+            LazyVGrid(columns: cols, spacing: 3) {
+                ForEach(cells) { cell in
+                    if cell.isEmpty {
+                        Color.clear.frame(height: 24)
+                    } else {
                         ZStack {
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(cellColor(count: day.sessionCount))
+                                .fill(cellColor(count: cell.sessionCount))
                                 .frame(height: 24)
 
-                            Text("\(day.dayNumber)")
-                                .font(.system(size: 9, weight: day.isToday ? .bold : .regular, design: .rounded))
-                                .foregroundStyle(day.sessionCount > 0 ? .white : .secondary)
+                            Text("\(cell.dayNumber)")
+                                .font(.system(size: 9, weight: cell.isToday ? .bold : .regular, design: .rounded))
+                                .foregroundStyle(cell.sessionCount > 0 ? .white : .secondary)
                         }
                         .overlay(
                             RoundedRectangle(cornerRadius: 4)
-                                .stroke(day.isToday ? Color.orange.opacity(0.7) : .clear, lineWidth: 1.5)
+                                .stroke(cell.isToday ? Color.orange.opacity(0.7) : .clear, lineWidth: 1.5)
                         )
-                    } else {
-                        Color.clear.frame(height: 24)
                     }
                 }
             }
@@ -217,16 +205,6 @@ struct DotCalendarView: View {
         default: return .orange.opacity(0.8)
         }
     }
-}
-
-struct CalendarDay: Identifiable {
-    let id = UUID()
-    let date: Date
-    let dayNumber: Int
-    let month: Int
-    let sessionCount: Int
-    let inRange: Bool
-    let isToday: Bool
 }
 
 // MARK: - Session row
