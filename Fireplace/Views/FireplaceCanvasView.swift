@@ -15,7 +15,7 @@ struct FireplaceCanvasView: View {
     var timeProgress: Double = 0
 
     private let fps: Double = 4
-    private let gridSize: Int = 16
+    private let rows: Int = 16
 
     // Cute campfire palette — warm & saturated, GBA-era
     private let star = Color(red: 0.95, green: 0.92, blue: 0.70)
@@ -57,226 +57,214 @@ struct FireplaceCanvasView: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1.0 / fps)) { context in
             Canvas { ctx, size in
-                let cw = size.width / CGFloat(gridSize)
-                let ch = size.height / CGFloat(gridSize)
+                // Square pixels based on height. Width adapts.
+                let cell = size.height / CGFloat(rows)
+                let cols = Int(ceil(size.width / cell))
+                let xOff = (cols - 16) / 2  // center the 16-wide scene
                 let frame = Int(context.date.timeIntervalSinceReferenceDate * fps) % 4
 
-                drawSky(ctx: ctx, cw: cw, ch: ch, frame: frame)
-                drawGround(ctx: ctx, cw: cw, ch: ch)
-                drawStoneRing(ctx: ctx, cw: cw, ch: ch)
-                drawStreakNotches(ctx: ctx, cw: cw, ch: ch)
-                drawLogs(ctx: ctx, cw: cw, ch: ch)
+                drawSky(ctx: ctx, cell: cell, cols: cols, xOff: xOff, frame: frame)
+                drawGround(ctx: ctx, cell: cell, cols: cols, xOff: xOff)
+                drawStoneRing(ctx: ctx, cell: cell, xOff: xOff)
+                drawStreakNotches(ctx: ctx, cell: cell, xOff: xOff)
+                drawLogs(ctx: ctx, cell: cell, xOff: xOff)
 
                 switch state {
                 case .idle:
-                    drawColdAsh(ctx: ctx, cw: cw, ch: ch, frame: frame)
+                    drawColdAsh(ctx: ctx, cell: cell, xOff: xOff, frame: frame)
                 case .lightingUp(let progress):
-                    drawLightingUp(ctx: ctx, cw: cw, ch: ch, frame: frame, progress: progress)
+                    drawLightingUp(ctx: ctx, cell: cell, xOff: xOff, frame: frame, progress: progress)
                 case .burning:
-                    drawGroundGlow(ctx: ctx, cw: cw, ch: ch, frame: frame)
-                    drawFire(ctx: ctx, cw: cw, ch: ch, frame: frame)
-                    drawSparks(ctx: ctx, cw: cw, ch: ch, frame: frame)
-                    drawStars(ctx: ctx, cw: cw, ch: ch, glow: true, frame: frame)
-                    if showMarshmallow { drawMarshmallow(ctx: ctx, cw: cw, ch: ch, frame: frame) }
+                    drawGroundGlow(ctx: ctx, cell: cell, cols: cols, xOff: xOff, frame: frame)
+                    drawFire(ctx: ctx, cell: cell, xOff: xOff, frame: frame)
+                    drawSparks(ctx: ctx, cell: cell, cols: cols, xOff: xOff, frame: frame)
+                    drawStars(ctx: ctx, cell: cell, cols: cols, xOff: xOff, glow: true, frame: frame)
+                    if showMarshmallow { drawMarshmallow(ctx: ctx, cell: cell, xOff: xOff, frame: frame) }
                 case .dyingDown(let progress):
-                    drawDyingDown(ctx: ctx, cw: cw, ch: ch, frame: frame, progress: progress)
+                    drawDyingDown(ctx: ctx, cell: cell, xOff: xOff, frame: frame, progress: progress)
                 case .embers:
-                    drawEmberState(ctx: ctx, cw: cw, ch: ch, frame: frame)
-                    drawSmoke(ctx: ctx, cw: cw, ch: ch, frame: frame)
-                    drawStars(ctx: ctx, cw: cw, ch: ch, glow: false, frame: frame)
+                    drawEmberState(ctx: ctx, cell: cell, xOff: xOff, frame: frame)
+                    drawSmoke(ctx: ctx, cell: cell, xOff: xOff, frame: frame)
+                    drawStars(ctx: ctx, cell: cell, cols: cols, xOff: xOff, glow: false, frame: frame)
                 }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
-    private func p(_ ctx: GraphicsContext, _ x: Int, _ y: Int, _ cw: CGFloat, _ ch: CGFloat, _ color: Color) {
-        let rect = CGRect(x: CGFloat(x) * cw, y: CGFloat(y) * ch, width: cw + 0.5, height: ch + 0.5)
+    // Square pixel at grid position (offset-adjusted for wide scenes)
+    private func p(_ ctx: GraphicsContext, _ x: Int, _ y: Int, _ cell: CGFloat, _ color: Color) {
+        let rect = CGRect(x: CGFloat(x) * cell, y: CGFloat(y) * cell, width: cell + 0.5, height: cell + 0.5)
         ctx.fill(Path(rect), with: .color(color))
     }
 
-    // MARK: - Sky
+    // Shorthand with x-offset applied
+    private func px(_ ctx: GraphicsContext, _ x: Int, _ y: Int, _ cell: CGFloat, _ xOff: Int, _ color: Color) {
+        p(ctx, x + xOff, y, cell, color)
+    }
 
-    private func drawSky(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
-        for y in 0..<gridSize {
-            for x in 0..<gridSize {
-                p(ctx, x, y, cw, ch, y < 6 ? skyTop : skyBot)
+    // MARK: - Sky (fills full width)
+
+    private func drawSky(ctx: GraphicsContext, cell: CGFloat, cols: Int, xOff: Int, frame: Int) {
+        for y in 0..<rows {
+            for x in 0..<cols {
+                p(ctx, x, y, cell, y < 6 ? skyTop : skyBot)
             }
         }
         if case .idle = state {
-            drawStars(ctx: ctx, cw: cw, ch: ch, glow: false, frame: frame)
+            drawStars(ctx: ctx, cell: cell, cols: cols, xOff: xOff, glow: false, frame: frame)
         }
     }
 
-    private func drawStars(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, glow: Bool, frame: Int) {
-        // Stars drift slowly based on session progress
+    private func drawStars(ctx: GraphicsContext, cell: CGFloat, cols: Int, xOff: Int, glow: Bool, frame: Int) {
         let drift = Int(timeProgress * 6)
-        let basePositions: [(Int, Int)] = [(2, 1), (12, 2), (5, 3), (14, 0), (9, 1), (0, 4)]
+        // More stars for the wider view
+        let basePositions: [(Int, Int)] = [
+            (2, 1), (12, 2), (5, 3), (14, 0), (9, 1), (0, 4),
+            (-4, 2), (-2, 4), (17, 1), (19, 3), (-6, 1), (21, 2),
+        ]
         for (i, (bx, y)) in basePositions.enumerated() {
-            let x = (bx + drift + i) % gridSize
+            let x = ((bx + xOff + drift + i) % cols + cols) % cols
             let twinkle = (frame + i) % 4 == 0
-            p(ctx, x, y, cw, ch, star.opacity(twinkle ? 0.5 : 0.85))
+            p(ctx, x, y, cell, star.opacity(twinkle ? 0.5 : 0.85))
         }
         if glow {
-            let gx = (2 + drift) % gridSize
-            p(ctx, gx, 1, cw, ch, star.opacity(frame % 2 == 0 ? 1.0 : 0.7))
+            let gx = ((2 + xOff + drift) % cols + cols) % cols
+            p(ctx, gx, 1, cell, star.opacity(frame % 2 == 0 ? 1.0 : 0.7))
         }
     }
 
-    // MARK: - Ground
+    // MARK: - Ground (fills full width)
 
-    private func drawGround(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat) {
-        for x in 0..<gridSize {
-            p(ctx, x, 12, cw, ch, x % 3 == 0 ? grassLight : grass)
+    private func drawGround(ctx: GraphicsContext, cell: CGFloat, cols: Int, xOff: Int) {
+        for x in 0..<cols {
+            p(ctx, x, 12, cell, x % 3 == 0 ? grassLight : grass)
         }
-        for x in 0..<gridSize {
-            p(ctx, x, 13, cw, ch, dirt)
-            p(ctx, x, 14, cw, ch, dirt)
-            p(ctx, x, 15, cw, ch, dirt)
+        for x in 0..<cols {
+            p(ctx, x, 13, cell, dirt)
+            p(ctx, x, 14, cell, dirt)
+            p(ctx, x, 15, cell, dirt)
         }
-        p(ctx, 1, 11, cw, ch, grass)
-        p(ctx, 2, 11, cw, ch, grassLight)
-        p(ctx, 13, 11, cw, ch, grass)
-        p(ctx, 14, 11, cw, ch, grassLight)
+        // Grass tufts (relative to campfire center)
+        px(ctx, 1, 11, cell, xOff, grass)
+        px(ctx, 2, 11, cell, xOff, grassLight)
+        px(ctx, 13, 11, cell, xOff, grass)
+        px(ctx, 14, 11, cell, xOff, grassLight)
+        // Extra tufts for wide view
+        p(ctx, 1, 11, cell, grass)
+        p(ctx, 2, 11, cell, grassLight)
+        let lastCol = cols - 1
+        p(ctx, lastCol - 1, 11, cell, grass)
+        p(ctx, lastCol, 11, cell, grassLight)
     }
 
-    // MARK: - Stone ring
+    // MARK: - Stone ring (centered)
 
-    private func drawStoneRing(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat) {
+    private func drawStoneRing(ctx: GraphicsContext, cell: CGFloat, xOff: Int) {
         let stones: [(Int, Int, Color)] = [
             (4, 12, stoneRing), (5, 13, stoneDark), (6, 13, stoneRing),
             (9, 13, stoneDark), (10, 13, stoneRing), (11, 12, stoneDark),
             (4, 13, stoneRing), (11, 13, stoneRing),
         ]
-        for (x, y, c) in stones { p(ctx, x, y, cw, ch, c) }
+        for (x, y, c) in stones { px(ctx, x, y, cell, xOff, c) }
     }
 
-    // MARK: - Streak notches on stones
-
-    private func drawStreakNotches(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat) {
+    private func drawStreakNotches(ctx: GraphicsContext, cell: CGFloat, xOff: Int) {
         guard streakDays > 0 else { return }
         let notchPositions: [(Int, Int)] = [
             (4, 12), (5, 13), (6, 13), (9, 13), (10, 13), (11, 12), (4, 13)
         ]
-        let count = min(streakDays, notchPositions.count)
-        for i in 0..<count {
+        for i in 0..<min(streakDays, notchPositions.count) {
             let (x, y) = notchPositions[i]
-            p(ctx, x, y, cw, ch, stoneNotch)
+            px(ctx, x, y, cell, xOff, stoneNotch)
         }
     }
 
-    // MARK: - Logs
+    // MARK: - Logs (centered)
 
-    private func drawLogs(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat) {
-        p(ctx, 5, 12, cw, ch, logDark)
-        p(ctx, 6, 11, cw, ch, logBrown)
-        p(ctx, 6, 12, cw, ch, logLight)
-        p(ctx, 7, 11, cw, ch, logBrown)
-        p(ctx, 7, 12, cw, ch, logBrown)
-        p(ctx, 8, 11, cw, ch, logBrown)
-        p(ctx, 8, 12, cw, ch, logBrown)
-        p(ctx, 9, 11, cw, ch, logBrown)
-        p(ctx, 9, 12, cw, ch, logLight)
-        p(ctx, 10, 12, cw, ch, logDark)
-        p(ctx, 7, 11, cw, ch, logLight)
-        p(ctx, 8, 11, cw, ch, logLight)
+    private func drawLogs(ctx: GraphicsContext, cell: CGFloat, xOff: Int) {
+        px(ctx, 5, 12, cell, xOff, logDark)
+        px(ctx, 6, 11, cell, xOff, logBrown)
+        px(ctx, 6, 12, cell, xOff, logLight)
+        px(ctx, 7, 11, cell, xOff, logBrown)
+        px(ctx, 7, 12, cell, xOff, logBrown)
+        px(ctx, 8, 11, cell, xOff, logBrown)
+        px(ctx, 8, 12, cell, xOff, logBrown)
+        px(ctx, 9, 11, cell, xOff, logBrown)
+        px(ctx, 9, 12, cell, xOff, logLight)
+        px(ctx, 10, 12, cell, xOff, logDark)
+        px(ctx, 7, 11, cell, xOff, logLight)
+        px(ctx, 8, 11, cell, xOff, logLight)
     }
 
-    // MARK: - Cold ash (idle)
+    // MARK: - Cold ash
 
-    private func drawColdAsh(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
-        p(ctx, 7, 11, cw, ch, ash)
-        p(ctx, 8, 11, cw, ch, ash)
-        p(ctx, 7, 10, cw, ch, ash.opacity(0.5))
+    private func drawColdAsh(ctx: GraphicsContext, cell: CGFloat, xOff: Int, frame: Int) {
+        px(ctx, 7, 11, cell, xOff, ash)
+        px(ctx, 8, 11, cell, xOff, ash)
+        px(ctx, 7, 10, cell, xOff, ash.opacity(0.5))
         let drift = frame % 2
-        p(ctx, 7 + drift, 9, cw, ch, smoke.opacity(0.2))
-        p(ctx, 8 - drift, 8, cw, ch, smoke.opacity(0.12))
+        px(ctx, 7 + drift, 9, cell, xOff, smoke.opacity(0.2))
+        px(ctx, 8 - drift, 8, cell, xOff, smoke.opacity(0.12))
     }
 
-    // MARK: - Lighting up transition
+    // MARK: - Lighting up
 
-    private func drawLightingUp(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int, progress: Double) {
-        // Ember base appears first
-        for x in 6...9 {
-            p(ctx, x, 11, cw, ch, emberBright.opacity(progress))
-        }
-
-        // Small flame grows with progress
+    private func drawLightingUp(ctx: GraphicsContext, cell: CGFloat, xOff: Int, frame: Int, progress: Double) {
+        for x in 6...9 { px(ctx, x, 11, cell, xOff, emberBright.opacity(progress)) }
         if progress > 0.25 {
-            p(ctx, 7, 10, cw, ch, flameOrange.opacity(progress))
-            p(ctx, 8, 10, cw, ch, flameOrange.opacity(progress))
+            px(ctx, 7, 10, cell, xOff, flameOrange.opacity(progress))
+            px(ctx, 8, 10, cell, xOff, flameOrange.opacity(progress))
         }
         if progress > 0.5 {
-            p(ctx, 7, 9, cw, ch, flameYellow.opacity(progress))
-            p(ctx, 8, 9, cw, ch, flameOrange.opacity(progress))
-            let drift = frame % 2
-            p(ctx, 7 + drift, 8, cw, ch, flameRed.opacity(progress * 0.7))
+            px(ctx, 7, 9, cell, xOff, flameYellow.opacity(progress))
+            px(ctx, 8, 9, cell, xOff, flameOrange.opacity(progress))
+            px(ctx, 7 + frame % 2, 8, cell, xOff, flameRed.opacity(progress * 0.7))
         }
         if progress > 0.75 {
-            p(ctx, 7, 8, cw, ch, flameYellow.opacity(progress))
-            p(ctx, 8, 7, cw, ch, flameOrange.opacity(progress * 0.6))
-            // Ground glow fading in
-            for x in 5...10 {
-                p(ctx, x, 13, cw, ch, warmGlow.opacity(progress * 0.3))
-            }
+            px(ctx, 7, 8, cell, xOff, flameYellow.opacity(progress))
+            px(ctx, 8, 7, cell, xOff, flameOrange.opacity(progress * 0.6))
+            for x in 5...10 { px(ctx, x, 13, cell, xOff, warmGlow.opacity(progress * 0.3)) }
         }
     }
 
-    // MARK: - Dying down transition
+    // MARK: - Dying down
 
-    private func drawDyingDown(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int, progress: Double) {
+    private func drawDyingDown(ctx: GraphicsContext, cell: CGFloat, xOff: Int, frame: Int, progress: Double) {
         let remaining = 1.0 - progress
-
-        // Fire shrinks as progress increases
-        for x in 6...9 {
-            p(ctx, x, 11, cw, ch, emberBright.opacity(0.5 + remaining * 0.5))
-        }
-
+        for x in 6...9 { px(ctx, x, 11, cell, xOff, emberBright.opacity(0.5 + remaining * 0.5)) }
         if remaining > 0.2 {
-            p(ctx, 7, 10, cw, ch, flameOrange.opacity(remaining))
-            p(ctx, 8, 10, cw, ch, flameOrange.opacity(remaining))
+            px(ctx, 7, 10, cell, xOff, flameOrange.opacity(remaining))
+            px(ctx, 8, 10, cell, xOff, flameOrange.opacity(remaining))
         }
         if remaining > 0.5 {
-            let drift = frame % 2
-            p(ctx, 7 + drift, 9, cw, ch, flameYellow.opacity(remaining))
-            p(ctx, 8 - drift, 8, cw, ch, flameRed.opacity(remaining * 0.6))
+            px(ctx, 7 + frame % 2, 9, cell, xOff, flameYellow.opacity(remaining))
+            px(ctx, 8 - frame % 2, 8, cell, xOff, flameRed.opacity(remaining * 0.6))
         }
-
-        // Smoke appears as fire dies
         if progress > 0.3 {
-            let drift = frame % 2
-            p(ctx, 7 + drift, 8, cw, ch, smoke.opacity(progress * 0.25))
-            p(ctx, 8 - drift, 7, cw, ch, smoke.opacity(progress * 0.15))
+            let d = frame % 2
+            px(ctx, 7 + d, 8, cell, xOff, smoke.opacity(progress * 0.25))
+            px(ctx, 8 - d, 7, cell, xOff, smoke.opacity(progress * 0.15))
         }
-
-        // Ground glow fading out
-        for x in 5...10 {
-            p(ctx, x, 13, cw, ch, warmGlow.opacity(remaining * 0.4))
-        }
+        for x in 5...10 { px(ctx, x, 13, cell, xOff, warmGlow.opacity(remaining * 0.4)) }
     }
 
-    // MARK: - Ground glow (burning)
+    // MARK: - Ground glow
 
-    private func drawGroundGlow(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
-        let glowAlpha = frame % 2 == 0 ? 0.5 : 0.35
-        for x in 5...10 {
-            p(ctx, x, 13, cw, ch, warmGlow.opacity(glowAlpha))
-        }
-        p(ctx, 4, 12, cw, ch, warmGlow.opacity(0.15))
-        p(ctx, 11, 12, cw, ch, warmGlow.opacity(0.15))
-        p(ctx, 3, 12, cw, ch, warmGlow.opacity(0.08))
-        p(ctx, 12, 12, cw, ch, warmGlow.opacity(0.08))
+    private func drawGroundGlow(ctx: GraphicsContext, cell: CGFloat, cols: Int, xOff: Int, frame: Int) {
+        let a = frame % 2 == 0 ? 0.5 : 0.35
+        for x in 5...10 { px(ctx, x, 13, cell, xOff, warmGlow.opacity(a)) }
+        px(ctx, 4, 12, cell, xOff, warmGlow.opacity(0.15))
+        px(ctx, 11, 12, cell, xOff, warmGlow.opacity(0.15))
+        px(ctx, 3, 12, cell, xOff, warmGlow.opacity(0.08))
+        px(ctx, 12, 12, cell, xOff, warmGlow.opacity(0.08))
     }
 
-    // MARK: - Fire (burning) — shrinks in last 20% of session
+    // MARK: - Fire
 
-    private func drawFire(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
-        // Fire intensity: full until 80%, then linearly decreases to 0.4
+    private func drawFire(ctx: GraphicsContext, cell: CGFloat, xOff: Int, frame: Int) {
         let intensity = timeProgress < 0.8 ? 1.0 : max(0.4, 1.0 - (timeProgress - 0.8) / 0.2 * 0.6)
 
-        for x in 6...9 {
-            p(ctx, x, 11, cw, ch, frame % 2 == 0 ? emberBright : flameOrange)
-        }
+        for x in 6...9 { px(ctx, x, 11, cell, xOff, frame % 2 == 0 ? emberBright : flameOrange) }
 
         let redFrames: [[(Int, Int)]] = [
             [(5, 10), (10, 10), (5, 9), (10, 9), (6, 10), (9, 10)],
@@ -284,7 +272,7 @@ struct FireplaceCanvasView: View {
             [(5, 10), (9, 10), (6, 9), (10, 9), (10, 10), (6, 10)],
             [(6, 10), (10, 10), (5, 10), (9, 10), (5, 9), (10, 9)],
         ]
-        for (x, y) in redFrames[frame % 4] { p(ctx, x, y, cw, ch, flameRed.opacity(intensity)) }
+        for (x, y) in redFrames[frame % 4] { px(ctx, x, y, cell, xOff, flameRed.opacity(intensity)) }
 
         let orangeFrames: [[(Int, Int)]] = [
             [(7, 10), (8, 10), (6, 9), (9, 9), (7, 9), (8, 9), (7, 8), (8, 8)],
@@ -292,7 +280,7 @@ struct FireplaceCanvasView: View {
             [(7, 10), (8, 10), (6, 9), (9, 9), (7, 9), (8, 9), (6, 8), (8, 8)],
             [(7, 10), (8, 10), (7, 9), (8, 9), (6, 9), (9, 9), (9, 8), (7, 8)],
         ]
-        for (x, y) in orangeFrames[frame % 4] { p(ctx, x, y, cw, ch, flameOrange.opacity(intensity)) }
+        for (x, y) in orangeFrames[frame % 4] { px(ctx, x, y, cell, xOff, flameOrange.opacity(intensity)) }
 
         let yellowFrames: [[(Int, Int)]] = [
             [(7, 9), (8, 9), (7, 8), (8, 7)],
@@ -300,13 +288,12 @@ struct FireplaceCanvasView: View {
             [(8, 9), (7, 8), (8, 8), (8, 7), (7, 7)],
             [(7, 9), (8, 8), (7, 8), (7, 7)],
         ]
-        for (x, y) in yellowFrames[frame % 4] { p(ctx, x, y, cw, ch, flameYellow.opacity(intensity)) }
+        for (x, y) in yellowFrames[frame % 4] { px(ctx, x, y, cell, xOff, flameYellow.opacity(intensity)) }
 
         let whitePositions: [(Int, Int)] = [(7, 8), (8, 7), (8, 8), (7, 7)]
         let (wx, wy) = whitePositions[frame % 4]
-        p(ctx, wx, wy, cw, ch, flameWhite.opacity(intensity))
+        px(ctx, wx, wy, cell, xOff, flameWhite.opacity(intensity))
 
-        // Tips only show when intensity > 0.6
         if intensity > 0.6 {
             let tipAlpha = (intensity - 0.6) / 0.4
             let tips: [[(Int, Int, Color)]] = [
@@ -315,64 +302,57 @@ struct FireplaceCanvasView: View {
                 [(7, 6, flameYellow), (8, 6, flameOrange), (7, 5, flameOrange), (8, 4, flameRed)],
                 [(8, 6, flameYellow), (7, 6, flameOrange), (8, 5, flameOrange), (7, 4, flameRed)],
             ]
-            for (x, y, c) in tips[frame % 4] { p(ctx, x, y, cw, ch, c.opacity(tipAlpha)) }
+            for (x, y, c) in tips[frame % 4] { px(ctx, x, y, cell, xOff, c.opacity(tipAlpha)) }
         }
     }
 
-    // MARK: - Sparks
+    // MARK: - Sparks (spread across wide view)
 
-    private func drawSparks(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
+    private func drawSparks(ctx: GraphicsContext, cell: CGFloat, cols: Int, xOff: Int, frame: Int) {
         let sparkSets: [[(Int, Int)]] = [
-            [(6, 5), (10, 4), (4, 7)],
-            [(10, 6), (5, 3), (11, 8)],
-            [(4, 4), (11, 5), (6, 3)],
-            [(11, 3), (5, 6), (9, 3)],
+            [(6, 5), (10, 4), (4, 7), (-3, 3), (17, 5)],
+            [(10, 6), (5, 3), (11, 8), (-5, 5), (19, 4)],
+            [(4, 4), (11, 5), (6, 3), (-2, 6), (18, 3)],
+            [(11, 3), (5, 6), (9, 3), (-4, 4), (20, 6)],
         ]
         for (x, y) in sparkSets[frame % 4] {
-            p(ctx, x, y, cw, ch, flameYellow.opacity(0.6))
+            let ax = x + xOff
+            if ax >= 0 && ax < cols {
+                p(ctx, ax, y, cell, flameYellow.opacity(0.6))
+            }
         }
     }
 
-    // MARK: - Embers (completed)
+    // MARK: - Embers
 
-    private func drawEmberState(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
+    private func drawEmberState(ctx: GraphicsContext, cell: CGFloat, xOff: Int, frame: Int) {
         let pulse: [Double] = [1.0, 0.65, 0.45, 0.8]
         let b = pulse[frame % 4]
-
-        for x in 6...9 {
-            p(ctx, x, 11, cw, ch, emberBright.opacity(b))
-        }
-        p(ctx, 7, 10, cw, ch, emberDim.opacity(b * 0.6))
-        p(ctx, 8, 10, cw, ch, emberDim.opacity(b * 0.4))
-
-        if frame % 4 == 0 { p(ctx, 7, 9, cw, ch, flameOrange.opacity(0.35)) }
-        if frame % 4 == 2 { p(ctx, 8, 9, cw, ch, flameOrange.opacity(0.25)) }
-
-        for x in 6...9 {
-            p(ctx, x, 13, cw, ch, warmGlow.opacity(b * 0.2))
-        }
+        for x in 6...9 { px(ctx, x, 11, cell, xOff, emberBright.opacity(b)) }
+        px(ctx, 7, 10, cell, xOff, emberDim.opacity(b * 0.6))
+        px(ctx, 8, 10, cell, xOff, emberDim.opacity(b * 0.4))
+        if frame % 4 == 0 { px(ctx, 7, 9, cell, xOff, flameOrange.opacity(0.35)) }
+        if frame % 4 == 2 { px(ctx, 8, 9, cell, xOff, flameOrange.opacity(0.25)) }
+        for x in 6...9 { px(ctx, x, 13, cell, xOff, warmGlow.opacity(b * 0.2)) }
     }
 
-    // MARK: - Smoke wisps
+    // MARK: - Smoke
 
-    private func drawSmoke(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
-        let drift = frame % 2
-        p(ctx, 7 + drift, 8, cw, ch, smoke.opacity(0.2))
-        p(ctx, 8 - drift, 7, cw, ch, smoke.opacity(0.15))
-        p(ctx, 7 + drift, 6, cw, ch, smoke.opacity(0.08))
+    private func drawSmoke(ctx: GraphicsContext, cell: CGFloat, xOff: Int, frame: Int) {
+        let d = frame % 2
+        px(ctx, 7 + d, 8, cell, xOff, smoke.opacity(0.2))
+        px(ctx, 8 - d, 7, cell, xOff, smoke.opacity(0.15))
+        px(ctx, 7 + d, 6, cell, xOff, smoke.opacity(0.08))
     }
 
-    // MARK: - Marshmallow Easter egg 🍡
+    // MARK: - Marshmallow
 
-    private func drawMarshmallow(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
-        // Stick coming from the right
-        p(ctx, 12, 10, cw, ch, stickBrown)
-        p(ctx, 11, 9, cw, ch, stickBrown)
-        p(ctx, 12, 9, cw, ch, stickBrown)
-
-        // Marshmallow on the end — toasting animation
-        let toastColor = frame % 4 < 2 ? mallowWhite : mallowBrown
-        p(ctx, 11, 8, cw, ch, toastColor)
-        p(ctx, 12, 8, cw, ch, mallowWhite)
+    private func drawMarshmallow(ctx: GraphicsContext, cell: CGFloat, xOff: Int, frame: Int) {
+        px(ctx, 12, 10, cell, xOff, stickBrown)
+        px(ctx, 11, 9, cell, xOff, stickBrown)
+        px(ctx, 12, 9, cell, xOff, stickBrown)
+        let toasting = frame % 4 < 2
+        px(ctx, 11, 8, cell, xOff, toasting ? mallowBrown : mallowWhite)
+        px(ctx, 12, 8, cell, xOff, mallowWhite)
     }
 }
