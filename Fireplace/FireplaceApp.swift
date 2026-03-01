@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let soundEngine = AmbientSoundEngine()
     let menuBarCompanion = MenuBarCompanion()
     private var observation: Any?
+    private var soundObservation: Any?
     private var transitionTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -41,6 +42,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menuBarCompanion.showIdle()
 
         reobserve()
+        reobserveSound()
     }
 
     private func reobserve() {
@@ -50,6 +52,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in
                 self?.handlePhaseChange()
                 self?.reobserve()
+            }
+        }
+    }
+
+    private func reobserveSound() {
+        soundObservation = withObservationTracking {
+            _ = self.appState.soundEnabled
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                self?.handleSoundToggle()
+                self?.reobserveSound()
+            }
+        }
+    }
+
+    private func handleSoundToggle() {
+        if case .focusing = appState.phase {
+            if appState.soundEnabled {
+                soundEngine.play()
+            } else {
+                soundEngine.stop()
             }
         }
     }
