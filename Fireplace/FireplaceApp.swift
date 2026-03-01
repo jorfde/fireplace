@@ -23,6 +23,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var transitionTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Set the app icon before becoming visible so About/⌘Tab show the campfire
+        dockTileRenderer.updateState(.idle, marshmallow: false, streak: appState.streakDays)
         NSApp.setActivationPolicy(.regular)
         cleanUpMenus()
         setupDockMenu()
@@ -33,7 +35,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         panelController = PanelController(appState: appState, focusTimer: focusTimer)
         panelController?.showPanel()
-        dockTileRenderer.updateState(.idle, marshmallow: false, streak: appState.streakDays)
 
         menuBarCompanion.onClicked = { [weak self] in
             self?.panelController?.togglePanel()
@@ -156,10 +157,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let mainMenu = NSMenu()
         let appMenuItem = NSMenuItem()
         let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "About Fireplace", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "Settings\u{2026}", action: #selector(showSettings), keyEquivalent: ",")
+        appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit Fireplace", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appMenuItem.submenu = appMenu
         mainMenu.addItem(appMenuItem)
         NSApp.mainMenu = mainMenu
+    }
+
+    @objc private func showSettings() {
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 }
 
