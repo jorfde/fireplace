@@ -42,16 +42,13 @@ struct HistoryView: View {
         VStack(spacing: 0) {
             HStack {
                 Button(action: onBack) {
-                    Label("Back", systemImage: "chevron.left")
-                        .font(.system(.subheadline, design: .rounded))
+                    PixelText(text: "< Back", pixelSize: 1.5, color: PixelTheme.textDim)
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
 
                 Spacer()
 
-                Text("History")
-                    .font(.system(.headline, design: .rounded))
+                PixelText(text: "History", pixelSize: 2, color: PixelTheme.text)
 
                 Spacer()
 
@@ -63,9 +60,7 @@ struct HistoryView: View {
 
             if sessions.isEmpty {
                 Spacer()
-                Text("No sessions yet")
-                    .font(.system(.subheadline, design: .rounded))
-                    .foregroundStyle(.tertiary)
+                PixelText(text: "No sessions yet", pixelSize: 1.5, color: PixelTheme.textDim)
                 Spacer()
             } else {
                 ScrollView {
@@ -75,9 +70,7 @@ struct HistoryView: View {
 
                         ForEach(Array(groupedByDay.enumerated()), id: \.offset) { _, group in
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(group.0)
-                                    .font(.system(.caption, design: .rounded, weight: .semibold))
-                                    .foregroundStyle(.secondary)
+                                PixelText(text: group.0, pixelSize: 1.2, color: PixelTheme.textDim)
                                     .padding(.horizontal, 4)
 
                                 ForEach(group.1) { session in
@@ -91,6 +84,7 @@ struct HistoryView: View {
                 }
             }
         }
+        .background(PixelTheme.bg)
     }
 }
 
@@ -156,8 +150,8 @@ struct DotCalendarView: View {
         VStack(spacing: 6) {
             HStack {
                 Text(monthLabel)
-                    .font(.system(.caption2, design: .rounded, weight: .medium))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(PixelTheme.textDim)
                 Spacer()
             }
 
@@ -165,45 +159,42 @@ struct DotCalendarView: View {
             HStack(spacing: 2) {
                 ForEach(["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"], id: \.self) { label in
                     Text(label)
-                        .font(.system(size: 8, weight: .medium, design: .rounded))
-                        .foregroundStyle(.quaternary)
+                        .font(.system(size: 8, weight: .medium, design: .monospaced))
+                        .foregroundStyle(PixelTheme.textDim)
                         .frame(maxWidth: .infinity)
                 }
             }
 
-            // Calendar grid
             LazyVGrid(columns: cols, spacing: 3) {
                 ForEach(cells) { cell in
                     if cell.isEmpty {
                         Color.clear.frame(height: 24)
                     } else {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 4)
+                            Rectangle()
                                 .fill(cellColor(count: cell.sessionCount))
                                 .frame(height: 24)
 
                             Text("\(cell.dayNumber)")
-                                .font(.system(size: 9, weight: cell.isToday ? .bold : .regular, design: .rounded))
-                                .foregroundStyle(cell.sessionCount > 0 ? .white : .secondary)
+                                .font(.system(size: 9, weight: cell.isToday ? .bold : .regular, design: .monospaced))
+                                .foregroundStyle(cell.sessionCount > 0 ? PixelTheme.text : PixelTheme.textDim)
                         }
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4)
-                                .stroke(cell.isToday ? Color.orange.opacity(0.7) : .clear, lineWidth: 1.5)
-                        )
+                        .overlay(pixelBorder(color: cell.isToday ? PixelTheme.accent : PixelTheme.border.opacity(0.3)))
                     }
                 }
             }
         }
         .padding(10)
-        .background(.quaternary.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+        .background(PixelTheme.cardBg)
+        .overlay(pixelBorder(color: PixelTheme.border))
     }
 
     private func cellColor(count: Int) -> Color {
         switch count {
-        case 0: return .secondary.opacity(0.08)
-        case 1: return .orange.opacity(0.35)
-        case 2: return .orange.opacity(0.55)
-        default: return .orange.opacity(0.8)
+        case 0: return PixelTheme.bg
+        case 1: return PixelTheme.accent.opacity(0.35)
+        case 2: return PixelTheme.accent.opacity(0.55)
+        default: return PixelTheme.accent.opacity(0.8)
         }
     }
 }
@@ -223,35 +214,36 @@ struct SessionRow: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(session.taskName)
-                    .font(.system(.subheadline, design: .rounded, weight: .medium))
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundStyle(PixelTheme.text)
                     .lineLimit(1)
 
                 Spacer()
 
                 Text(session.finished ? "\u{2713}" : "\u{2717}")
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(session.finished ? .green : .secondary)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(session.finished ? PixelTheme.success : PixelTheme.textDim)
             }
 
             HStack {
                 Text(dateString)
-                    .font(.system(.caption2, design: .rounded))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(PixelTheme.textDim)
 
                 Text("\u{00B7}")
-                    .foregroundStyle(.quaternary)
+                    .foregroundStyle(PixelTheme.border)
 
                 Text("\(session.durationMinutes)m")
-                    .font(.system(.caption2, design: .rounded))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(PixelTheme.textDim)
 
                 if !session.journalEntry.isEmpty {
                     Text("\u{00B7}")
-                        .foregroundStyle(.quaternary)
+                        .foregroundStyle(PixelTheme.border)
 
                     Text(session.journalEntry)
-                        .font(.system(.caption2, design: .rounded))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(PixelTheme.text.opacity(0.7))
                         .lineLimit(1)
                 }
 
@@ -260,6 +252,7 @@ struct SessionRow: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 8)
-        .background(.quaternary.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
+        .background(PixelTheme.cardBg)
+        .overlay(pixelBorder(color: PixelTheme.border.opacity(0.5)))
     }
 }
