@@ -40,9 +40,7 @@ struct SetupView: View {
 
             VStack(spacing: 16) {
                 VStack(spacing: 10) {
-                    Text("What\u{2019}s on your mind?")
-                        .font(.system(.subheadline, design: .rounded))
-                        .foregroundStyle(.secondary)
+                    PixelText(text: "What's on your mind?", pixelSize: 1.5, color: .secondary)
 
                     TextField("Name your task", text: $appState.draftTaskName)
                         .textFieldStyle(.plain)
@@ -73,8 +71,9 @@ struct SetupView: View {
                 }
 
                 Button(action: { appState.startSession(); onStart() }) {
-                    Label("Light the fire", systemImage: "flame.fill")
+                    PixelText(text: "Light the fire", pixelSize: 2, color: .white)
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
@@ -82,9 +81,7 @@ struct SetupView: View {
                 .keyboardShortcut(.return, modifiers: .command)
 
                 if appState.streakDays > 0 {
-                    Text("\(appState.streakDays) day streak \u{1F525}")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.tertiary)
+                    PixelText(text: "\(appState.streakDays) day streak", pixelSize: 1.5, color: .orange, opacity: 0.6)
                 }
             }
             .padding(.horizontal, 20)

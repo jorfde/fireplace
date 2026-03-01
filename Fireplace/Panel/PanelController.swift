@@ -146,9 +146,7 @@ struct TransitionView: View {
                 .padding(.horizontal, 12)
                 .padding(.top, 4)
 
-            Text(label)
-                .font(.system(.headline, design: .rounded))
-                .foregroundStyle(.secondary)
+            PixelText(text: label, pixelSize: 2, color: .secondary)
                 .padding(20)
         }
     }
@@ -184,9 +182,7 @@ struct FocusingView: View {
             .padding(.top, 4)
 
             VStack(spacing: 14) {
-                Text(taskName)
-                    .font(.system(.headline, design: .rounded))
-                    .lineLimit(1)
+                PixelText(text: taskName, pixelSize: 2, color: .primary)
 
                 ZStack {
                     Circle()
@@ -199,9 +195,7 @@ struct FocusingView: View {
                         .frame(width: 100, height: 100)
                         .rotationEffect(.degrees(-90))
 
-                    Text(timeString)
-                        .font(.system(.title2, design: .monospaced, weight: .medium))
-                        .foregroundStyle(.secondary)
+                    PixelText(text: timeString, pixelSize: 2.5, color: .secondary)
                 }
 
                 HStack(spacing: 0) {
@@ -210,9 +204,7 @@ struct FocusingView: View {
                         .font(.system(.caption, design: .rounded))
                         .foregroundStyle(.tertiary)
 
-                    Text(" \u{00B7} ")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.quaternary)
+                    PixelText(text: " . ", pixelSize: 1, color: .gray.opacity(0.4))
 
                     Button(action: { appState.soundEnabled.toggle() }) {
                         Image(systemName: appState.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
@@ -222,9 +214,7 @@ struct FocusingView: View {
                     .buttonStyle(.plain)
                     .help(appState.soundEnabled ? "Mute" : "Unmute")
 
-                    Text(" \u{00B7} ")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.quaternary)
+                    PixelText(text: " . ", pixelSize: 1, color: .gray.opacity(0.4))
 
                     Button("Hide") { onClose() }
                         .buttonStyle(.plain)
@@ -273,23 +263,16 @@ struct CompletionView: View {
 
             VStack(spacing: 10) {
                 VStack(spacing: 6) {
-                    Text("Your fire burned for \(focusedMinutes) minute\(focusedMinutes == 1 ? "" : "s")")
-                        .font(.system(.subheadline, design: .rounded, weight: .medium))
-                        .foregroundStyle(.orange)
+                    PixelText(text: "Burned for \(focusedMinutes) min", pixelSize: 2, color: .orange)
                         .opacity(textVisible ? 1 : 0)
                         .offset(y: textVisible ? 0 : 8)
 
-                    Text("\u{201C}\(taskName)\u{201D}")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    PixelText(text: taskName, pixelSize: 1.5, color: .secondary)
                 }
 
                 if showKeepGoing {
                     VStack(spacing: 10) {
-                        Text("Add more time")
-                            .font(.system(.caption, design: .rounded))
-                            .foregroundStyle(.secondary)
+                        PixelText(text: "Add more time", pixelSize: 1.5, color: .secondary)
 
                         HStack(spacing: 8) {
                             ForEach([15, 25, 45, 60], id: \.self) { mins in
@@ -315,8 +298,9 @@ struct CompletionView: View {
                             }
                             appState.restartWithMoreTime(duration: selectedMoreTime)
                         }) {
-                            Label("Keep going", systemImage: "flame.fill")
+                            PixelText(text: "Keep going", pixelSize: 2, color: .white)
                                 .frame(maxWidth: .infinity)
+                                .padding(.vertical, 4)
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.orange)
@@ -324,25 +308,33 @@ struct CompletionView: View {
                     }
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 } else {
-                    HStack(spacing: 12) {
-                        Button("Finished \u{2713}") { finishSession(finished: true) }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.green.opacity(0.8))
-                            .controlSize(.large)
+                    PixelText(text: "How'd it go?", pixelSize: 2, color: .primary)
 
-                        Button("Need more time") {
+                    HStack(spacing: 12) {
+                        Button { finishSession(finished: true) } label: {
+                            PixelText(text: "Finished", pixelSize: 1.5, color: .white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green.opacity(0.8))
+                        .controlSize(.large)
+
+                        Button {
                             withAnimation(.easeOut(duration: 0.3)) {
                                 showKeepGoing = true
                             }
+                        } label: {
+                            PixelText(text: "More time", pixelSize: 1.5, color: .primary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.large)
                     }
 
                     VStack(spacing: 6) {
-                        Text("Any thoughts?")
-                            .font(.system(.caption, design: .rounded))
-                            .foregroundStyle(.tertiary)
+                        PixelText(text: "Any thoughts?", pixelSize: 1.5, color: .gray.opacity(0.5))
 
                         TextField("One sentence...", text: $appState.journalEntry)
                             .textFieldStyle(.plain)
@@ -354,9 +346,12 @@ struct CompletionView: View {
                 }
 
                 if appState.sessionHistory.thisWeekCount > 0 {
-                    Text("\(appState.sessionHistory.thisWeekCount) sessions this week \u{00B7} \(appState.sessionHistory.thisWeekMinutes) min")
-                        .font(.system(.caption2, design: .rounded))
-                        .foregroundStyle(.tertiary)
+                    PixelText(
+                        text: "\(appState.sessionHistory.thisWeekCount) sessions . \(appState.sessionHistory.thisWeekMinutes) min",
+                        pixelSize: 1.2,
+                        color: .secondary,
+                        opacity: 0.5
+                    )
                 }
             }
             .padding(.horizontal, 20)
