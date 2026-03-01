@@ -142,13 +142,13 @@ struct TransitionView: View {
             FireplaceCanvasView(state: state)
                 .frame(maxWidth: .infinity)
                 .frame(height: 150)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
                 .padding(.horizontal, 12)
                 .padding(.top, 4)
-
-            PixelText(text: label, pixelSize: 2, color: .secondary)
-                .padding(20)
+            Spacer()
+            PixelText(text: label, pixelSize: 2, color: PixelTheme.textDim)
+            Spacer()
         }
+        .background(PixelTheme.bg)
     }
 }
 
@@ -177,54 +177,38 @@ struct FocusingView: View {
             )
             .frame(maxWidth: .infinity)
             .frame(height: 150)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
             .padding(.horizontal, 12)
             .padding(.top, 4)
 
-            VStack(spacing: 14) {
-                PixelText(text: taskName, pixelSize: 2, color: .primary)
+            VStack(spacing: 12) {
+                PixelText(text: taskName, pixelSize: 2, color: PixelTheme.text)
 
-                ZStack {
-                    Circle()
-                        .stroke(.quaternary, lineWidth: 4)
-                        .frame(width: 100, height: 100)
+                PixelProgressBar(progress: focusTimer.progress, timeString: timeString)
+                    .padding(.horizontal, 20)
 
-                    Circle()
-                        .trim(from: 0, to: focusTimer.progress)
-                        .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                        .frame(width: 100, height: 100)
-                        .rotationEffect(.degrees(-90))
-
-                    PixelText(text: timeString, pixelSize: 2.5, color: .secondary)
-                }
-
-                HStack(spacing: 0) {
-                    Button("Extinguish") { appState.extinguishEarly() }
-                        .buttonStyle(.plain)
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.tertiary)
-
-                    PixelText(text: " . ", pixelSize: 1, color: .gray.opacity(0.4))
+                HStack(spacing: 12) {
+                    PixelButton(label: "Stop", color: PixelTheme.cardBg, textColor: PixelTheme.textDim, pixelSize: 1.5) {
+                        appState.extinguishEarly()
+                    }
 
                     Button(action: { appState.soundEnabled.toggle() }) {
-                        Image(systemName: appState.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.tertiary)
+                        PixelText(
+                            text: appState.soundEnabled ? "SND" : "---",
+                            pixelSize: 1.2,
+                            color: appState.soundEnabled ? PixelTheme.accent : PixelTheme.textDim
+                        )
                     }
                     .buttonStyle(.plain)
-                    .help(appState.soundEnabled ? "Mute" : "Unmute")
 
-                    PixelText(text: " . ", pixelSize: 1, color: .gray.opacity(0.4))
-
-                    Button("Hide") { onClose() }
-                        .buttonStyle(.plain)
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.tertiary)
+                    PixelButton(label: "Hide", color: PixelTheme.cardBg, textColor: PixelTheme.textDim, pixelSize: 1.5) {
+                        onClose()
+                    }
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
             .padding(.vertical, 14)
         }
+        .background(PixelTheme.bg)
     }
 }
 
@@ -256,91 +240,58 @@ struct CompletionView: View {
             FireplaceCanvasView(state: .embers, streakDays: appState.streakDays)
                 .frame(maxWidth: .infinity)
                 .frame(height: celebrating ? 140 : 130)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
                 .padding(.horizontal, 12)
                 .padding(.top, 4)
                 .animation(.easeInOut(duration: 1.5), value: celebrating)
 
             VStack(spacing: 10) {
                 VStack(spacing: 6) {
-                    PixelText(text: "Burned for \(focusedMinutes) min", pixelSize: 2, color: .orange)
+                    PixelText(text: "Burned for \(focusedMinutes) min", pixelSize: 2, color: PixelTheme.accent)
                         .opacity(textVisible ? 1 : 0)
                         .offset(y: textVisible ? 0 : 8)
 
-                    PixelText(text: taskName, pixelSize: 1.5, color: .secondary)
+                    PixelText(text: taskName, pixelSize: 1.5, color: PixelTheme.textDim)
                 }
 
                 if showKeepGoing {
                     VStack(spacing: 10) {
-                        PixelText(text: "Add more time", pixelSize: 1.5, color: .secondary)
+                        PixelText(text: "Add more time", pixelSize: 1.5, color: PixelTheme.textDim)
 
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             ForEach([15, 25, 45, 60], id: \.self) { mins in
-                                Button {
+                                PixelChip(label: "\(mins)m", isSelected: selectedMoreTime == mins) {
                                     selectedMoreTime = mins
-                                } label: {
-                                    Text("\(mins)m")
-                                        .font(.system(.caption, design: .rounded, weight: .semibold))
-                                        .foregroundStyle(selectedMoreTime == mins ? .white : .secondary)
-                                        .frame(width: 44, height: 26)
-                                        .background(
-                                            selectedMoreTime == mins ? AnyShapeStyle(.orange) : AnyShapeStyle(.quaternary),
-                                            in: RoundedRectangle(cornerRadius: 6)
-                                        )
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
 
-                        Button(action: {
+                        PixelButton(label: "Keep going", color: PixelTheme.accent, pixelSize: 2, fullWidth: true) {
                             if let s = session {
                                 appState.sessionHistory.record(s, finished: false, journal: appState.journalEntry)
                             }
                             appState.restartWithMoreTime(duration: selectedMoreTime)
-                        }) {
-                            PixelText(text: "Keep going", pixelSize: 2, color: .white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 4)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.orange)
-                        .controlSize(.regular)
                     }
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 } else {
-                    PixelText(text: "How'd it go?", pixelSize: 2, color: .primary)
+                    PixelText(text: "How'd it go?", pixelSize: 2, color: PixelTheme.text)
 
-                    HStack(spacing: 12) {
-                        Button { finishSession(finished: true) } label: {
-                            PixelText(text: "Finished", pixelSize: 1.5, color: .white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                    HStack(spacing: 8) {
+                        PixelButton(label: "Finished", color: PixelTheme.success, pixelSize: 1.5) {
+                            finishSession(finished: true)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green.opacity(0.8))
-                        .controlSize(.large)
 
-                        Button {
+                        PixelButton(label: "More time", color: PixelTheme.cardBg, textColor: PixelTheme.text, pixelSize: 1.5) {
                             withAnimation(.easeOut(duration: 0.3)) {
                                 showKeepGoing = true
                             }
-                        } label: {
-                            PixelText(text: "More time", pixelSize: 1.5, color: .primary)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
                     }
 
                     VStack(spacing: 6) {
-                        PixelText(text: "Any thoughts?", pixelSize: 1.5, color: .gray.opacity(0.5))
+                        PixelText(text: "Any thoughts?", pixelSize: 1.2, color: PixelTheme.textDim)
 
-                        TextField("One sentence...", text: $appState.journalEntry)
-                            .textFieldStyle(.plain)
-                            .font(.system(.caption, design: .rounded))
-                            .padding(6)
-                            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 5))
+                        PixelTextField(placeholder: "One sentence...", text: $appState.journalEntry)
                             .focused($isJournalFocused)
                     }
                 }
@@ -349,24 +300,19 @@ struct CompletionView: View {
                     PixelText(
                         text: "\(appState.sessionHistory.thisWeekCount) sessions . \(appState.sessionHistory.thisWeekMinutes) min",
                         pixelSize: 1.2,
-                        color: .secondary,
+                        color: PixelTheme.textDim,
                         opacity: 0.5
                     )
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
             .padding(.vertical, 12)
         }
+        .background(PixelTheme.bg)
         .onAppear {
-            // Celebration: fade in the focus time after a brief moment
-            withAnimation(.easeOut(duration: 0.8).delay(0.5)) {
-                textVisible = true
-            }
-            // End celebration pulse after 2s
+            withAnimation(.easeOut(duration: 0.8).delay(0.5)) { textVisible = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                withAnimation(.easeInOut(duration: 1)) {
-                    celebrating = false
-                }
+                withAnimation(.easeInOut(duration: 1)) { celebrating = false }
             }
         }
     }

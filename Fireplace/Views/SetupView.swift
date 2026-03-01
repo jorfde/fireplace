@@ -14,15 +14,11 @@ struct SetupView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Toolbar row — sits in the transparent title bar area
             HStack(spacing: 10) {
                 Spacer()
-
                 if !appState.sessionHistory.sessions.isEmpty, let onShowHistory {
                     Button(action: { onShowHistory() }) {
-                        Image(systemName: "book.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.tertiary)
+                        PixelText(text: "...", pixelSize: 1.5, color: PixelTheme.textDim)
                     }
                     .buttonStyle(.plain)
                     .help("Session history")
@@ -35,29 +31,18 @@ struct SetupView: View {
             FireplaceCanvasView(state: .idle, streakDays: appState.streakDays)
                 .frame(maxWidth: .infinity)
                 .frame(height: 150)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
                 .padding(.horizontal, 12)
 
-            VStack(spacing: 16) {
-                VStack(spacing: 10) {
-                    PixelText(text: "What's on your mind?", pixelSize: 1.5, color: .secondary)
+            VStack(spacing: 14) {
+                PixelText(text: "What's on your mind?", pixelSize: 1.5, color: PixelTheme.textDim)
 
-                    TextField("Name your task", text: $appState.draftTaskName)
-                        .textFieldStyle(.plain)
-                        .font(.system(.body, design: .rounded))
-                        .padding(8)
-                        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
-                        .focused($focusedField, equals: .taskName)
-                        .onSubmit { focusedField = .duration }
-                }
+                PixelTextField(placeholder: "Name your task", text: $appState.draftTaskName)
+                    .focused($focusedField, equals: .taskName)
+                    .onSubmit { focusedField = .duration }
 
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     ForEach(appState.availableDurations, id: \.self) { minutes in
-                        DurationChip(
-                            minutes: minutes,
-                            isSelected: appState.selectedDuration == minutes,
-                            isFocused: focusedField == .duration && appState.selectedDuration == minutes
-                        ) {
+                        PixelChip(label: "\(minutes)m", isSelected: appState.selectedDuration == minutes) {
                             appState.selectedDuration = minutes
                         }
                     }
@@ -70,23 +55,19 @@ struct SetupView: View {
                     return .ignored
                 }
 
-                Button(action: { appState.startSession(); onStart() }) {
-                    PixelText(text: "Light the fire", pixelSize: 2, color: .white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
+                PixelButton(label: "Light the fire", color: PixelTheme.accent, pixelSize: 2, fullWidth: true) {
+                    appState.startSession()
+                    onStart()
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
-                .controlSize(.large)
-                .keyboardShortcut(.return, modifiers: .command)
 
                 if appState.streakDays > 0 {
-                    PixelText(text: "\(appState.streakDays) day streak", pixelSize: 1.5, color: .orange, opacity: 0.6)
+                    PixelText(text: "\(appState.streakDays) day streak", pixelSize: 1.2, color: PixelTheme.accent, opacity: 0.6)
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
             .padding(.vertical, 14)
         }
+        .background(PixelTheme.bg)
         .onAppear { focusedField = .taskName }
     }
 
@@ -94,30 +75,5 @@ struct SetupView: View {
         let d = appState.availableDurations
         guard let i = d.firstIndex(of: appState.selectedDuration) else { return }
         appState.selectedDuration = d[max(0, min(d.count - 1, i + offset))]
-    }
-}
-
-struct DurationChip: View {
-    let minutes: Int
-    let isSelected: Bool
-    var isFocused: Bool = false
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text("\(minutes)m")
-                .font(.system(.caption, design: .rounded, weight: .semibold))
-                .foregroundStyle(isSelected ? .white : .secondary)
-                .frame(width: 50, height: 28)
-                .background(
-                    isSelected ? AnyShapeStyle(.orange) : AnyShapeStyle(.quaternary),
-                    in: RoundedRectangle(cornerRadius: 6)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(isFocused ? Color.orange.opacity(0.6) : .clear, lineWidth: 2)
-                )
-        }
-        .buttonStyle(.plain)
     }
 }
