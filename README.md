@@ -1,73 +1,101 @@
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-macOS%2014%2B-black?style=flat-square" />
+  <img src="https://img.shields.io/badge/swift-5.10-F05138?style=flat-square&logo=swift&logoColor=white" />
+  <img src="https://img.shields.io/badge/dependencies-zero-green?style=flat-square" />
+  <img src="https://img.shields.io/badge/lines-~2k-blue?style=flat-square" />
+</p>
+
 # 🔥 Fireplace
 
-A tiny cozy focus timer for macOS.
+**A tiny cozy focus timer that lives in your macOS Dock.**
 
-Fireplace turns focused work into a small ritual. You tell it what you're working on, set a duration, and a pixel-art campfire lights up in your Dock while you work. No dashboards. No guilt.
+You tell it what you're working on. You pick how long. A pixel-art campfire lights up in your Dock and burns while you work — twinkling stars, crackling sound, the whole scene. When the fire dies down, Fireplace asks one question: *"Did you finish?"*
 
-When the fire dies down, Fireplace asks a simple question: **"Did you finish?"**
-
----
-
-## Philosophy
-
-- **Focus is a state, not a number.** A campfire burns in your Dock — that's your only signal.
-- **Time passes through a living object.** Pixel-art flames replace the anxiety of a ticking clock.
-- **Reflection over enforcement.** When your session ends, you're asked what happened — not judged for it.
-
-Fireplace is closer to a desk object or a campfire than a productivity tool.
+No dashboards. No analytics. No guilt. Just a campfire.
 
 ---
 
-## What it does
+## Why
 
-1. **Lives in your Dock** — animated pixel-art campfire with night sky and twinkling stars
-2. **Also in the menu bar** — 🔥 icon toggles the same panel as the Dock icon
-3. **Setup is two steps:** name your task, pick a duration (15 / 25 / 45 / 60 min)
-4. **During focus:** circular progress ring with countdown, task name displayed, soft crackling sound
-5. **When time's up:** fire animates down to embers, Dock bounces gently, you're asked "Did you finish?"
-6. **Optional micro-journal:** "How did it go?" — one sentence, no pressure
-7. **Streak tracking:** consecutive-day notch marks appear on the campfire stones
+Most timers optimize for productivity. Fireplace optimizes for *feel*.
+
+Focus is treated as a state, not a metric. Time passes through a living object — not a countdown that demands your attention. And when your session ends, you're invited to reflect, not report.
+
+It's closer to a desk object than a productivity tool.
 
 ---
 
-## Screenshots
+## Quick Start
 
+```bash
+git clone https://github.com/your-username/fireplace.git
+cd fireplace
+swift run
 ```
-┌──────────────────────────┐    ┌──────────────────────────┐    ┌──────────────────────────┐
-│                          │    │                          │    │                          │
-│   🪵 (cold campfire)     │    │   🔥 (burning campfire)  │    │   🟠 (glowing embers)    │
-│                          │    │                          │    │                          │
-│  What are you working on?│    │  Your current task is    │    │    The fire has gone out  │
-│  ┌──────────────────────┐│    │  "Fix login bug"         │    │    "Fix login bug"       │
-│  │ Fix login bug        ││    │                          │    │                          │
-│  └──────────────────────┘│    │      ╭──────╮            │    │  Did you finish?         │
-│                          │    │      │12:34 │  ← ring    │    │                          │
-│  [15] [25] [45] [60]    │    │      ╰──────╯            │    │  [ Yes ✓ ]  [ Not yet ]  │
-│                          │    │                          │    │  How did it go? _____    │
-│  [ Light the fire 🔥 ]   │    │  [Extinguish early]      │    │      Start another →     │
-│                          │    │        Hide              │    │                          │
-└──────────────────────────┘    └──────────────────────────┘    └──────────────────────────┘
-       Setup view                    Focusing view                   Completion view
+
+Or open in Xcode:
+
+```bash
+open Package.swift
 ```
+
+> Requires **macOS 14 (Sonoma)** or later and **Xcode 15+**.
+
+---
+
+## How It Works
+
+### 1. Set up
+
+Name your task, pick a duration (`15m` / `25m` / `45m` / `60m`), and hit **Light the fire**.
+
+### 2. Focus
+
+The panel hides. A pixel-art campfire burns in your Dock. Stars twinkle. A progress ring quietly counts down. Ambient sound plays if you want it.
+
+### 3. Reflect
+
+The fire dies down to embers. The Dock bounces once. You're asked:
+
+> **Did you finish?**
+
+Optionally jot one sentence about how it went. That's it. Start another, or walk away.
 
 ---
 
 ## Features
 
-| Feature | Details |
-|---|---|
-| **Animated Dock icon** | 32×32 pixel grid on 880×880 plate (1024×1024 canvas), 4 FPS. Night sky with twinkling stars, campfire with logs, stones, sparks. |
-| **Animated transitions** | Fire grows from a spark (1s), dies down with smoke (1.5s). No instant state snaps. |
-| **Crackling sound** | Procedural audio generated at runtime. Fades in/out with the fire. Toggleable in Settings (⌘,). |
-| **Progress ring** | Circular orange progress indicator with `mm:ss` countdown during focus. |
-| **Menu bar companion** | 🔥 always visible. Click to toggle panel. Tooltip shows task + time remaining. |
-| **Right-click Dock menu** | Current task, time left, extinguish early, quick-start presets, sound toggle. |
-| **Keyboard-first** | Tab → arrow keys → Enter. Full flow without touching the mouse. |
-| **Dynamic sky** | Panel campfire sky shifts by time of day: dawn, day, golden hour, night. |
-| **Streak counter** | Consecutive-day notches on stones. Persisted in UserDefaults. |
-| **Micro-journaling** | Optional "How did it go?" on completion. |
-| **Dock bounce** | Gentle `informationalRequest` when session completes. |
-| **Marshmallow 🍡** | Type "marshmallow" as your task for a toasting marshmallow Easter egg. |
+#### The Campfire
+
+- **Animated Dock icon** — 32×32 pixel grid rendered at 1024×1024. Night sky, twinkling stars, flickering flames, floating sparks. 4 FPS for that authentic pixel-art feel.
+- **Animated transitions** — Fire grows from a spark (1s). Dies down with rising smoke (1.5s). No instant state changes.
+- **Visual time passage** — Stars drift across the sky as your session progresses. The fire shrinks in the last 20%. Time is *felt*, not just read.
+- **Dynamic sky** — The panel campfire sky shifts with the real time of day: dawn, daylight, golden hour, night.
+
+#### The Experience
+
+- **Progress ring** — Circular indicator with `mm:ss` countdown. Present but not pushy.
+- **Micro-journaling** — Optional one-line "How did it go?" prompt on completion. No pressure.
+- **Streak tracking** — Consecutive-day notch marks appear on the campfire stones. Quiet visual memory.
+- **Session history** — Past sessions saved locally (task, duration, finished, journal). Weekly summary on the completion screen.
+
+#### Ambient Sound
+
+- **Four procedural layers** — Crackling fire, rain, wind, white noise. All generated at runtime — zero audio files in the repo.
+- **Mix and match** — Each layer independently toggleable with its own volume slider in Settings (`⌘,`).
+- **Gentle fades** — Sound fades in when the fire lights and fades out when it dies.
+
+#### macOS Integration
+
+- **Dock + menu bar** — Two entry points. Dock icon for the ritual, menu bar 🔥 for quick access.
+- **Right-click Dock menu** — Current task, time remaining, extinguish early, quick-start presets, sound toggle.
+- **Keyboard-first** — `Tab` → arrow keys → `Enter`. Full setup without touching the mouse. `⌘Enter` to start from anywhere.
+- **Dock bounce** — Single gentle notification when your session completes.
+- **Settings** — `⌘,` opens the ambient sound mixer.
+
+#### Easter Egg
+
+Type **"marshmallow"** as your task name. 🍡
 
 ---
 
@@ -75,85 +103,101 @@ Fireplace is closer to a desk object or a campfire than a productivity tool.
 
 ```
 Fireplace/
-├── FireplaceApp.swift              App entry + AppDelegate + Dock menu
-├── AppState.swift                  @Observable state machine + streak tracker
+├── FireplaceApp.swift              App lifecycle, Dock menu, state wiring
+├── AppState.swift                  @Observable state machine, streak tracker
+├── SessionHistory.swift            Session persistence (UserDefaults/JSON)
+│
 ├── Panel/
-│   ├── FloatingPanel.swift         NSPanel subclass (HUD, floating)
+│   ├── FloatingPanel.swift         NSPanel (HUD, floating, non-activating)
 │   └── PanelController.swift       Panel positioning + all view states
+│
 ├── Views/
-│   ├── SetupView.swift             Task name + duration chips + keyboard nav
-│   ├── CompletionView.swift        Reflection prompt + micro-journal
-│   ├── SettingsView.swift          Sound toggle (⌘,)
-│   └── FireplaceCanvasView.swift   16×16 pixel-art for the panel UI
+│   ├── SetupView.swift             Task name, duration chips, keyboard nav
+│   ├── SettingsView.swift          Ambient sound mixer (⌘,)
+│   └── FireplaceCanvasView.swift   16×16 pixel-art canvas (panel)
+│
 ├── DockTile/
-│   ├── DockIconCanvasView.swift    32×32 pixel-art for the Dock icon
-│   └── DockTileRenderer.swift      Renders frames → applicationIconImage
+│   ├── DockIconCanvasView.swift    32×32 pixel-art canvas (Dock icon)
+│   └── DockTileRenderer.swift      Frame rendering → applicationIconImage
+│
 ├── Timer/
-│   └── FocusTimer.swift            Countdown with progress tracking
+│   └── FocusTimer.swift            Countdown + progress tracking
+│
 ├── Sound/
-│   └── CracklingSound.swift        Procedural crackling audio
+│   └── CracklingSound.swift        Multi-layer procedural ambient engine
+│
 ├── MenuBar/
-│   └── MenuBarCompanion.swift      Status bar icon + click handler
+│   └── MenuBarCompanion.swift      Status bar icon + panel toggle
+│
 └── Package.swift
 ```
 
-### State machine
+### State Machine
 
 ```
-idle  →  lightingUp  →  focusing  →  dyingDown  →  completed  →  idle
-         (1s grow)      (fire burns)  (1.5s fade)   (embers glow)
+         ┌─────────────────────────────────────────────────────┐
+         ▼                                                     │
+       idle  →  lightingUp  →  focusing  →  dyingDown  →  completed
+                 (1s grow)     (burns)      (1.5s fade)    (embers)
 ```
 
-- **Idle** — Cold campfire, drifting smoke. Setup UI.
-- **Lighting up** — Flames grow from a spark over 1 second.
-- **Focusing** — Full fire burns at 4 FPS. Progress ring counts down. Sound plays.
-- **Dying down** — Fire shrinks, smoke rises over 1.5 seconds.
-- **Completed** — Embers pulse. Dock bounces. Reflection prompt appears.
-
-### Dock icon spec
-
-- **Canvas:** 1024×1024 px, transparent background
-- **Plate:** 880×880 rounded rectangle, 190px corner radius, centered
-- **Artwork:** 32×32 pixel grid scaled to fill the plate
-- **Animation:** Same canvas/plate/alignment every frame — only flame pixels move
-
-### Key decisions
-
-| Choice | Rationale |
+| State | What happens |
 |---|---|
-| **Dock + menu bar** | Two entry points — Dock icon for the ritual, menu bar for quick access |
-| **NSPanel (HUD)** | Floating, non-activating — feels like a desk object, not a window |
-| **Code-generated pixel art** | No external assets, two canvases (16×16 panel, 32×32 Dock) |
-| **Procedural sound** | WAV generated at runtime — zero asset files in the repo |
-| **4 FPS animation** | Deliberately low frame rate for authentic pixel-art feel |
-| **Preset durations** | Fewer decisions = more ritual |
-| **Minimal persistence** | Only streak days in UserDefaults. Each launch is a fresh start. |
+| **Idle** | Cold campfire, drifting smoke wisp. Setup UI shown. |
+| **Lighting up** | Flames grow from a spark over 1 second. |
+| **Focusing** | Full fire with sparks. Progress ring counts down. Ambient sound plays. |
+| **Dying down** | Fire shrinks, smoke rises over 1.5 seconds. Sound fades out. |
+| **Completed** | Embers pulse. Dock bounces. Reflection prompt appears. |
 
-### Tech
+### Dock Icon Spec
 
-- Swift 5.10, SwiftUI with AppKit integration
-- macOS 14+ (Sonoma)
-- `@Observable` + `withObservationTracking` for reactive state
-- `ImageRenderer` to snapshot SwiftUI Canvas into `NSImage`
-- `AVAudioPlayer` with procedurally generated WAV data
-- Zero external dependencies — ~1,800 lines of Swift
+Follows [Apple's Human Interface Guidelines for app icons](https://developer.apple.com/design/human-interface-guidelines/app-icons):
+
+| Property | Value |
+|---|---|
+| Canvas | 1024 × 1024 px, transparent background |
+| Plate | 880 × 880 px rounded rectangle, 190px continuous corner radius, centered |
+| Artwork | 32 × 32 pixel grid, nearest-neighbor scaled to fill plate |
+| Animation | Identical canvas/plate/alignment every frame — only flame pixels change |
+
+### Design Decisions
+
+| Decision | Rationale |
+|---|---|
+| NSPanel (HUD) | Floating, non-activating — feels like a desk object, not a window |
+| Code-generated pixel art | Zero external assets. Two canvases: 16×16 panel, 32×32 Dock |
+| Procedural audio | Four ambient layers generated as WAV at runtime. No bundled files |
+| 4 FPS animation | Deliberately low for authentic retro pixel-art aesthetic |
+| Preset durations | Fewer choices = more ritual. No custom input needed |
+| Minimal persistence | Streak + history in UserDefaults. No database, no sync |
+
+### Tech Stack
+
+| | |
+|---|---|
+| Language | Swift 5.10 |
+| UI | SwiftUI + AppKit (`NSPanel`, `NSDockTile`, `NSStatusItem`) |
+| State | `@Observable` + `withObservationTracking` |
+| Rendering | SwiftUI `Canvas` → `ImageRenderer` → `NSImage` |
+| Audio | `AVAudioPlayer` with runtime-generated WAV data |
+| Target | macOS 14+ (Sonoma) |
+| Dependencies | None |
+| Size | ~2,000 lines of Swift, 13 source files |
 
 ---
 
-## Run
+## Contributing
 
-```bash
-# Build and run
-swift run
+Fireplace is intentionally small. If you'd like to contribute:
 
-# Or open in Xcode
-open Package.swift
-```
+1. **Bug fixes** — always welcome
+2. **New ambient layers** — add a case to `AmbientLayer` and implement the generator in `CracklingSound.swift`
+3. **Pixel art** — edit `FireplaceCanvasView.swift` (panel) or `DockIconCanvasView.swift` (Dock). Every pixel is a function call
 
-Requires macOS 14 (Sonoma) or later and Xcode 15+.
+Please keep the spirit: simple, cozy, no feature creep.
 
 ---
 
 ## License
 
-MIT
+[MIT](LICENSE)
