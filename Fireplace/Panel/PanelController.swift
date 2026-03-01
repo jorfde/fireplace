@@ -122,7 +122,9 @@ struct TransitionView: View {
             FireplaceCanvasView(state: state)
                 .frame(maxWidth: .infinity)
                 .frame(height: 150)
-                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, 12)
+                .padding(.top, 4)
 
             Text(label)
                 .font(.headline)
@@ -157,7 +159,9 @@ struct FocusingView: View {
             )
             .frame(maxWidth: .infinity)
             .frame(height: 150)
-            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .padding(.horizontal, 12)
+            .padding(.top, 4)
 
             VStack(spacing: 12) {
                 VStack(spacing: 4) {
@@ -230,7 +234,9 @@ struct CompletionView: View {
             FireplaceCanvasView(state: .embers, streakDays: appState.streakDays)
                 .frame(maxWidth: .infinity)
                 .frame(height: 130)
-                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, 12)
+                .padding(.top, 4)
 
             VStack(spacing: 12) {
                 VStack(spacing: 6) {

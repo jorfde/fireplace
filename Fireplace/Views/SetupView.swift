@@ -18,7 +18,9 @@ struct SetupView: View {
                 FireplaceCanvasView(state: .idle, streakDays: appState.streakDays)
                     .frame(maxWidth: .infinity)
                     .frame(height: 150)
-                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 12)
+                    .padding(.top, 4)
 
                 VStack(spacing: 16) {
                     VStack(spacing: 10) {
