@@ -4,7 +4,7 @@
 </div>
 
 <p align="center">
-  A tiny cozy focus timer that lives in your macOS Dock.
+  A tiny, cozy focus timer that lives in your macOS Dock.
 </p>
 
 <p align="center">
@@ -16,13 +16,10 @@
 
 ---
 
-Fireplace is a focus timer for macOS. You name your task, pick a duration, and a pixel-art campfire lights up in your Dock. Stars twinkle. Sound plays. When the fire dies down, it asks you how it went.
+Fireplace is a focus timer for macOS. You name your task, pick a duration, and a pixel-art campfire lights up in your Dock. Stars twinkle. Sound plays. When the fire dies down, it asks you how it went. Check your notes over time in the log if you'd like. 
 
-The entire interface is pixel art. Every button, every label, every progress bar. It looks and feels like a game from 2003, but it runs on Sonoma.
+The entire interface is pixel art. No dashboards. No analytics. No subscriptions. Just a campfire.
 
-No dashboards. No analytics. No subscriptions. Just a campfire.
-
----
 
 ## Screenshots
 
@@ -32,12 +29,6 @@ No dashboards. No analytics. No subscriptions. Just a campfire.
   <img src="assets/focusing.png" alt="Focusing" width="260" />
   &nbsp;&nbsp;
   <img src="assets/completion.png" alt="Completion" width="260" />
-</p>
-
-<p align="center">
-  <img src="assets/dock-icon.png" alt="Dock icon" width="120" />
-  &nbsp;&nbsp;&nbsp;
-  <img src="assets/sound-mixer.png" alt="Sound mixer" width="260" />
   &nbsp;&nbsp;&nbsp;
   <img src="assets/history.png" alt="History" width="260" />
 </p>
