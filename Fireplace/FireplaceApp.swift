@@ -35,6 +35,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panelController?.showPanel()
         dockTileRenderer.updateState(.idle, marshmallow: false, streak: appState.streakDays)
 
+        menuBarCompanion.onClicked = { [weak self] in
+            self?.panelController?.togglePanel()
+        }
+        menuBarCompanion.showIdle()
+
         reobserve()
     }
 
@@ -54,7 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .idle:
             focusTimer.stop()
             cracklingSound.stop()
-            menuBarCompanion.hide()
+            menuBarCompanion.showIdle()
             transitionTimer?.invalidate()
             dockTileRenderer.updateState(.idle, marshmallow: false, streak: appState.streakDays)
 
@@ -83,7 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         case .completed:
             focusTimer.stop()
-            menuBarCompanion.hide()
+            menuBarCompanion.showIdle()
             appState.recordSessionForStreak()
             dockTileRenderer.updateState(.embers, marshmallow: false, streak: appState.streakDays)
             panelController?.showPanel()
