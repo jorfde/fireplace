@@ -31,7 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.appState.beginDyingDown()
         }
 
-        panelController = PanelController(appState: appState)
+        panelController = PanelController(appState: appState, focusTimer: focusTimer)
         panelController?.showPanel()
         dockTileRenderer.updateState(.idle, marshmallow: false, streak: appState.streakDays)
 

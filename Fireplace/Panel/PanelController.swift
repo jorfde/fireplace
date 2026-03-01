@@ -4,18 +4,20 @@ import SwiftUI
 final class PanelController {
     private var panel: FloatingPanel?
     private let appState: AppState
+    private let focusTimer: FocusTimer
 
-    init(appState: AppState) {
+    init(appState: AppState, focusTimer: FocusTimer) {
         self.appState = appState
+        self.focusTimer = focusTimer
     }
 
     func showPanel() {
         if panel == nil {
-            let contentRect = NSRect(x: 0, y: 0, width: 280, height: 360)
+            let contentRect = NSRect(x: 0, y: 0, width: 280, height: 380)
             let newPanel = FloatingPanel(contentRect: contentRect)
 
             let hostingView = NSHostingView(
-                rootView: PanelContentView(appState: appState, onClose: { [weak self] in
+                rootView: PanelContentView(appState: appState, focusTimer: focusTimer, onClose: { [weak self] in
                     self?.hidePanel()
                 })
             )
@@ -82,6 +84,7 @@ final class PanelController {
 
 struct PanelContentView: View {
     @Bindable var appState: AppState
+    var focusTimer: FocusTimer
     var onClose: () -> Void
 
     var body: some View {
@@ -92,7 +95,7 @@ struct PanelContentView: View {
             case .lightingUp:
                 LightingUpView()
             case .focusing:
-                FocusingView(appState: appState, onClose: onClose)
+                FocusingView(appState: appState, focusTimer: focusTimer, onClose: onClose)
             case .dyingDown:
                 DyingDownView()
             case .completed:
@@ -119,16 +122,52 @@ struct LightingUpView: View {
 
 struct FocusingView: View {
     @Bindable var appState: AppState
+    var focusTimer: FocusTimer
     var onClose: () -> Void
 
-    var body: some View {
-        VStack(spacing: 16) {
-            FireplaceCanvasView(state: .burning, showMarshmallow: appState.isMarshmallow, streakDays: appState.streakDays)
-                .frame(width: 160, height: 160)
+    private var taskName: String {
+        if case .focusing(let session) = appState.phase { return session.taskName }
+        return ""
+    }
 
-            Text("The fire is burning...")
-                .font(.headline)
-                .foregroundStyle(.secondary)
+    private var timeString: String {
+        let total = Int(focusTimer.remainingSeconds)
+        let mins = total / 60
+        let secs = total % 60
+        return "\(mins):\(String(format: "%02d", secs))"
+    }
+
+    var body: some View {
+        VStack(spacing: 14) {
+            FireplaceCanvasView(state: .burning, showMarshmallow: appState.isMarshmallow, streakDays: appState.streakDays)
+                .frame(width: 140, height: 140)
+
+            VStack(spacing: 4) {
+                Text("Your current task is")
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+
+                Text(taskName)
+                    .font(.headline)
+                    .lineLimit(1)
+            }
+
+            // Progress ring with time remaining
+            ZStack {
+                Circle()
+                    .stroke(.quaternary, lineWidth: 3)
+                    .frame(width: 52, height: 52)
+
+                Circle()
+                    .trim(from: 0, to: focusTimer.progress)
+                    .stroke(.orange, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .frame(width: 52, height: 52)
+                    .rotationEffect(.degrees(-90))
+
+                Text(timeString)
+                    .font(.system(.caption2, design: .monospaced, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
 
             Button("Extinguish early") {
                 appState.extinguishEarly()
@@ -144,7 +183,7 @@ struct FocusingView: View {
             .foregroundStyle(.tertiary)
             .font(.subheadline)
         }
-        .padding(24)
+        .padding(20)
     }
 }
 
