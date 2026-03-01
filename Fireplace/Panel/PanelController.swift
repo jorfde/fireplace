@@ -62,22 +62,41 @@ struct PanelContentView: View {
             switch appState.phase {
             case .idle:
                 SetupView(appState: appState, onStart: onClose)
+            case .lightingUp:
+                LightingUpView()
             case .focusing:
-                FocusingView(onClose: onClose)
+                FocusingView(appState: appState, onClose: onClose)
+            case .dyingDown:
+                DyingDownView()
             case .completed:
                 CompletionView(appState: appState)
             }
         }
-        .frame(width: 280, height: 360)
+        .frame(width: 280, height: 380)
+    }
+}
+
+struct LightingUpView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            FireplaceCanvasView(state: .lightingUp(progress: 0.5))
+                .frame(width: 160, height: 160)
+
+            Text("Lighting the fire...")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(24)
     }
 }
 
 struct FocusingView: View {
+    @Bindable var appState: AppState
     var onClose: () -> Void
 
     var body: some View {
         VStack(spacing: 16) {
-            FireplaceCanvasView(state: .burning)
+            FireplaceCanvasView(state: .burning, showMarshmallow: appState.isMarshmallow, streakDays: appState.streakDays)
                 .frame(width: 160, height: 160)
 
             Text("The fire is burning...")
@@ -90,6 +109,20 @@ struct FocusingView: View {
             .buttonStyle(.plain)
             .foregroundStyle(.tertiary)
             .font(.subheadline)
+        }
+        .padding(24)
+    }
+}
+
+struct DyingDownView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            FireplaceCanvasView(state: .dyingDown(progress: 0.5))
+                .frame(width: 160, height: 160)
+
+            Text("The fire is dying down...")
+                .font(.headline)
+                .foregroundStyle(.secondary)
         }
         .padding(24)
     }

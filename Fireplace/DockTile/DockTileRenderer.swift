@@ -5,18 +5,23 @@ import SwiftUI
 final class DockTileRenderer {
     private let frameInterval: TimeInterval = 0.25
     private var currentState: FireplaceAnimationState = .idle
+    private var showMarshmallow = false
+    private var streakDays = 0
     private var frameIndex: Int = 0
     private var animationTimer: Timer?
 
-    func updateState(_ state: FireplaceAnimationState) {
+    func updateState(_ state: FireplaceAnimationState, marshmallow: Bool = false, streak: Int = 0) {
         currentState = state
+        showMarshmallow = marshmallow
+        streakDays = streak
 
         switch state {
         case .idle:
             stopAnimation()
             renderFrame()
-        case .burning, .embers:
+        case .burning, .embers, .lightingUp, .dyingDown:
             if animationTimer == nil { startAnimation() }
+            renderFrame()
         }
     }
 
@@ -45,7 +50,7 @@ final class DockTileRenderer {
     private func renderFireplaceToImage() -> NSImage {
         let size = CGSize(width: 128, height: 128)
         let renderer = ImageRenderer(content:
-            FireplaceCanvasView(state: currentState)
+            FireplaceCanvasView(state: currentState, showMarshmallow: showMarshmallow, streakDays: streakDays)
                 .frame(width: 128, height: 128)
         )
         renderer.scale = 2.0

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CompletionView: View {
     @Bindable var appState: AppState
+    @FocusState private var isJournalFocused: Bool
 
     private var taskName: String {
         if case .completed(let session) = appState.phase {
@@ -11,9 +12,9 @@ struct CompletionView: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            FireplaceCanvasView(state: .embers)
-                .frame(width: 140, height: 140)
+        VStack(spacing: 16) {
+            FireplaceCanvasView(state: .embers, streakDays: appState.streakDays)
+                .frame(width: 130, height: 130)
 
             VStack(spacing: 6) {
                 Text("The fire has gone out")
@@ -43,6 +44,19 @@ struct CompletionView: View {
                 .controlSize(.large)
             }
 
+            VStack(spacing: 6) {
+                Text("How did it go?")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+
+                TextField("One sentence...", text: $appState.journalEntry)
+                    .textFieldStyle(.plain)
+                    .font(.caption)
+                    .padding(6)
+                    .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 5))
+                    .focused($isJournalFocused)
+            }
+
             Button("Start another →") {
                 appState.reset()
             }
@@ -50,6 +64,6 @@ struct CompletionView: View {
             .foregroundStyle(.tertiary)
             .font(.subheadline)
         }
-        .padding(24)
+        .padding(20)
     }
 }

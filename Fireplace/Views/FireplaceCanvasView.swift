@@ -2,25 +2,28 @@ import SwiftUI
 
 enum FireplaceAnimationState {
     case idle
+    case lightingUp(progress: Double)
     case burning
+    case dyingDown(progress: Double)
     case embers
 }
 
 struct FireplaceCanvasView: View {
     let state: FireplaceAnimationState
+    var showMarshmallow: Bool = false
+    var streakDays: Int = 0
 
     private let fps: Double = 4
     private let gridSize: Int = 16
 
     // Cute campfire palette — warm & saturated, GBA-era
-    private let skyTop = Color(red: 0.05, green: 0.05, blue: 0.15)
-    private let skyBot = Color(red: 0.08, green: 0.07, blue: 0.18)
     private let star = Color(red: 0.95, green: 0.92, blue: 0.70)
     private let grass = Color(red: 0.18, green: 0.35, blue: 0.15)
     private let grassLight = Color(red: 0.25, green: 0.45, blue: 0.20)
     private let dirt = Color(red: 0.30, green: 0.20, blue: 0.12)
     private let stoneRing = Color(red: 0.45, green: 0.42, blue: 0.40)
     private let stoneDark = Color(red: 0.32, green: 0.30, blue: 0.28)
+    private let stoneNotch = Color(red: 0.55, green: 0.52, blue: 0.48)
     private let logBrown = Color(red: 0.45, green: 0.25, blue: 0.12)
     private let logLight = Color(red: 0.58, green: 0.35, blue: 0.18)
     private let logDark = Color(red: 0.30, green: 0.16, blue: 0.08)
@@ -33,6 +36,22 @@ struct FireplaceCanvasView: View {
     private let ash = Color(red: 0.40, green: 0.36, blue: 0.34)
     private let warmGlow = Color(red: 0.35, green: 0.15, blue: 0.05)
     private let smoke = Color(red: 0.50, green: 0.48, blue: 0.52)
+    private let mallowWhite = Color(red: 0.95, green: 0.92, blue: 0.88)
+    private let mallowBrown = Color(red: 0.65, green: 0.45, blue: 0.25)
+    private let stickBrown = Color(red: 0.50, green: 0.32, blue: 0.15)
+
+    private var skyTop: Color { skyColors.0 }
+    private var skyBot: Color { skyColors.1 }
+
+    private var skyColors: (Color, Color) {
+        let hour = Calendar.current.component(.hour, from: .now)
+        switch hour {
+        case 6...7:   return (Color(red: 0.20, green: 0.15, blue: 0.25), Color(red: 0.35, green: 0.22, blue: 0.30))
+        case 8...16:  return (Color(red: 0.15, green: 0.25, blue: 0.45), Color(red: 0.20, green: 0.30, blue: 0.50))
+        case 17...18: return (Color(red: 0.30, green: 0.15, blue: 0.18), Color(red: 0.40, green: 0.20, blue: 0.15))
+        default:      return (Color(red: 0.05, green: 0.05, blue: 0.15), Color(red: 0.08, green: 0.07, blue: 0.18))
+        }
+    }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1.0 / fps)) { context in
@@ -44,16 +63,22 @@ struct FireplaceCanvasView: View {
                 drawSky(ctx: ctx, cw: cw, ch: ch, frame: frame)
                 drawGround(ctx: ctx, cw: cw, ch: ch)
                 drawStoneRing(ctx: ctx, cw: cw, ch: ch)
+                drawStreakNotches(ctx: ctx, cw: cw, ch: ch)
                 drawLogs(ctx: ctx, cw: cw, ch: ch)
 
                 switch state {
                 case .idle:
                     drawColdAsh(ctx: ctx, cw: cw, ch: ch, frame: frame)
+                case .lightingUp(let progress):
+                    drawLightingUp(ctx: ctx, cw: cw, ch: ch, frame: frame, progress: progress)
                 case .burning:
                     drawGroundGlow(ctx: ctx, cw: cw, ch: ch, frame: frame)
                     drawFire(ctx: ctx, cw: cw, ch: ch, frame: frame)
                     drawSparks(ctx: ctx, cw: cw, ch: ch, frame: frame)
                     drawStars(ctx: ctx, cw: cw, ch: ch, glow: true, frame: frame)
+                    if showMarshmallow { drawMarshmallow(ctx: ctx, cw: cw, ch: ch, frame: frame) }
+                case .dyingDown(let progress):
+                    drawDyingDown(ctx: ctx, cw: cw, ch: ch, frame: frame, progress: progress)
                 case .embers:
                     drawEmberState(ctx: ctx, cw: cw, ch: ch, frame: frame)
                     drawSmoke(ctx: ctx, cw: cw, ch: ch, frame: frame)
@@ -77,8 +102,7 @@ struct FireplaceCanvasView: View {
                 p(ctx, x, y, cw, ch, y < 6 ? skyTop : skyBot)
             }
         }
-        // Stars only drawn in idle (burning/embers draw their own)
-        if state == .idle {
+        if case .idle = state {
             drawStars(ctx: ctx, cw: cw, ch: ch, glow: false, frame: frame)
         }
     }
@@ -89,7 +113,6 @@ struct FireplaceCanvasView: View {
             let twinkle = (frame + i) % 4 == 0
             p(ctx, x, y, cw, ch, star.opacity(twinkle ? 0.5 : 0.85))
         }
-        // One bright star
         if glow {
             p(ctx, 2, 1, cw, ch, star.opacity(frame % 2 == 0 ? 1.0 : 0.7))
         }
@@ -98,17 +121,14 @@ struct FireplaceCanvasView: View {
     // MARK: - Ground
 
     private func drawGround(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat) {
-        // Grass line
         for x in 0..<gridSize {
             p(ctx, x, 12, cw, ch, x % 3 == 0 ? grassLight : grass)
         }
-        // Dirt under campfire
         for x in 0..<gridSize {
             p(ctx, x, 13, cw, ch, dirt)
             p(ctx, x, 14, cw, ch, dirt)
             p(ctx, x, 15, cw, ch, dirt)
         }
-        // Grass tufts
         p(ctx, 1, 11, cw, ch, grass)
         p(ctx, 2, 11, cw, ch, grassLight)
         p(ctx, 13, 11, cw, ch, grass)
@@ -126,24 +146,33 @@ struct FireplaceCanvasView: View {
         for (x, y, c) in stones { p(ctx, x, y, cw, ch, c) }
     }
 
-    // MARK: - Logs (cute crossed arrangement)
+    // MARK: - Streak notches on stones
+
+    private func drawStreakNotches(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat) {
+        guard streakDays > 0 else { return }
+        let notchPositions: [(Int, Int)] = [
+            (4, 12), (5, 13), (6, 13), (9, 13), (10, 13), (11, 12), (4, 13)
+        ]
+        let count = min(streakDays, notchPositions.count)
+        for i in 0..<count {
+            let (x, y) = notchPositions[i]
+            p(ctx, x, y, cw, ch, stoneNotch)
+        }
+    }
+
+    // MARK: - Logs
 
     private func drawLogs(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat) {
-        // Left log (leaning right) /
         p(ctx, 5, 12, cw, ch, logDark)
         p(ctx, 6, 11, cw, ch, logBrown)
         p(ctx, 6, 12, cw, ch, logLight)
         p(ctx, 7, 11, cw, ch, logBrown)
         p(ctx, 7, 12, cw, ch, logBrown)
-
-        // Right log (leaning left) \
         p(ctx, 8, 11, cw, ch, logBrown)
         p(ctx, 8, 12, cw, ch, logBrown)
         p(ctx, 9, 11, cw, ch, logBrown)
         p(ctx, 9, 12, cw, ch, logLight)
         p(ctx, 10, 12, cw, ch, logDark)
-
-        // Cross piece on top
         p(ctx, 7, 11, cw, ch, logLight)
         p(ctx, 8, 11, cw, ch, logLight)
     }
@@ -154,11 +183,71 @@ struct FireplaceCanvasView: View {
         p(ctx, 7, 11, cw, ch, ash)
         p(ctx, 8, 11, cw, ch, ash)
         p(ctx, 7, 10, cw, ch, ash.opacity(0.5))
-
-        // Cute tiny smoke wisp drifting
         let drift = frame % 2
         p(ctx, 7 + drift, 9, cw, ch, smoke.opacity(0.2))
         p(ctx, 8 - drift, 8, cw, ch, smoke.opacity(0.12))
+    }
+
+    // MARK: - Lighting up transition
+
+    private func drawLightingUp(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int, progress: Double) {
+        // Ember base appears first
+        for x in 6...9 {
+            p(ctx, x, 11, cw, ch, emberBright.opacity(progress))
+        }
+
+        // Small flame grows with progress
+        if progress > 0.25 {
+            p(ctx, 7, 10, cw, ch, flameOrange.opacity(progress))
+            p(ctx, 8, 10, cw, ch, flameOrange.opacity(progress))
+        }
+        if progress > 0.5 {
+            p(ctx, 7, 9, cw, ch, flameYellow.opacity(progress))
+            p(ctx, 8, 9, cw, ch, flameOrange.opacity(progress))
+            let drift = frame % 2
+            p(ctx, 7 + drift, 8, cw, ch, flameRed.opacity(progress * 0.7))
+        }
+        if progress > 0.75 {
+            p(ctx, 7, 8, cw, ch, flameYellow.opacity(progress))
+            p(ctx, 8, 7, cw, ch, flameOrange.opacity(progress * 0.6))
+            // Ground glow fading in
+            for x in 5...10 {
+                p(ctx, x, 13, cw, ch, warmGlow.opacity(progress * 0.3))
+            }
+        }
+    }
+
+    // MARK: - Dying down transition
+
+    private func drawDyingDown(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int, progress: Double) {
+        let remaining = 1.0 - progress
+
+        // Fire shrinks as progress increases
+        for x in 6...9 {
+            p(ctx, x, 11, cw, ch, emberBright.opacity(0.5 + remaining * 0.5))
+        }
+
+        if remaining > 0.2 {
+            p(ctx, 7, 10, cw, ch, flameOrange.opacity(remaining))
+            p(ctx, 8, 10, cw, ch, flameOrange.opacity(remaining))
+        }
+        if remaining > 0.5 {
+            let drift = frame % 2
+            p(ctx, 7 + drift, 9, cw, ch, flameYellow.opacity(remaining))
+            p(ctx, 8 - drift, 8, cw, ch, flameRed.opacity(remaining * 0.6))
+        }
+
+        // Smoke appears as fire dies
+        if progress > 0.3 {
+            let drift = frame % 2
+            p(ctx, 7 + drift, 8, cw, ch, smoke.opacity(progress * 0.25))
+            p(ctx, 8 - drift, 7, cw, ch, smoke.opacity(progress * 0.15))
+        }
+
+        // Ground glow fading out
+        for x in 5...10 {
+            p(ctx, x, 13, cw, ch, warmGlow.opacity(remaining * 0.4))
+        }
     }
 
     // MARK: - Ground glow (burning)
@@ -170,20 +259,17 @@ struct FireplaceCanvasView: View {
         }
         p(ctx, 4, 12, cw, ch, warmGlow.opacity(0.15))
         p(ctx, 11, 12, cw, ch, warmGlow.opacity(0.15))
-        // Light on grass
         p(ctx, 3, 12, cw, ch, warmGlow.opacity(0.08))
         p(ctx, 12, 12, cw, ch, warmGlow.opacity(0.08))
     }
 
-    // MARK: - Fire (burning) — big, warm, cheerful
+    // MARK: - Fire (burning)
 
     private func drawFire(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
-        // Ember base
         for x in 6...9 {
             p(ctx, x, 11, cw, ch, frame % 2 == 0 ? emberBright : flameOrange)
         }
 
-        // Red outer
         let redFrames: [[(Int, Int)]] = [
             [(5, 10), (10, 10), (5, 9), (10, 9), (6, 10), (9, 10)],
             [(6, 10), (10, 10), (5, 9), (10, 9), (5, 10), (9, 10)],
@@ -192,7 +278,6 @@ struct FireplaceCanvasView: View {
         ]
         for (x, y) in redFrames[frame % 4] { p(ctx, x, y, cw, ch, flameRed) }
 
-        // Orange middle
         let orangeFrames: [[(Int, Int)]] = [
             [(7, 10), (8, 10), (6, 9), (9, 9), (7, 9), (8, 9), (7, 8), (8, 8)],
             [(7, 10), (8, 10), (7, 9), (8, 9), (6, 9), (9, 9), (8, 8), (7, 8)],
@@ -201,7 +286,6 @@ struct FireplaceCanvasView: View {
         ]
         for (x, y) in orangeFrames[frame % 4] { p(ctx, x, y, cw, ch, flameOrange) }
 
-        // Yellow core
         let yellowFrames: [[(Int, Int)]] = [
             [(7, 9), (8, 9), (7, 8), (8, 7)],
             [(7, 9), (8, 9), (8, 8), (7, 7)],
@@ -210,12 +294,10 @@ struct FireplaceCanvasView: View {
         ]
         for (x, y) in yellowFrames[frame % 4] { p(ctx, x, y, cw, ch, flameYellow) }
 
-        // White-hot dancing pixel
         let whitePositions: [(Int, Int)] = [(7, 8), (8, 7), (8, 8), (7, 7)]
         let (wx, wy) = whitePositions[frame % 4]
         p(ctx, wx, wy, cw, ch, flameWhite)
 
-        // Flame tip reaching up
         let tips: [[(Int, Int, Color)]] = [
             [(7, 6, flameYellow), (8, 5, flameOrange), (7, 4, flameRed)],
             [(8, 6, flameYellow), (7, 5, flameOrange), (8, 4, flameRed)],
@@ -245,30 +327,40 @@ struct FireplaceCanvasView: View {
         let pulse: [Double] = [1.0, 0.65, 0.45, 0.8]
         let b = pulse[frame % 4]
 
-        // Glowing ember bed
         for x in 6...9 {
             p(ctx, x, 11, cw, ch, emberBright.opacity(b))
         }
-        // Dim warmth above
         p(ctx, 7, 10, cw, ch, emberDim.opacity(b * 0.6))
         p(ctx, 8, 10, cw, ch, emberDim.opacity(b * 0.4))
 
-        // Tiny flicker on some frames
         if frame % 4 == 0 { p(ctx, 7, 9, cw, ch, flameOrange.opacity(0.35)) }
         if frame % 4 == 2 { p(ctx, 8, 9, cw, ch, flameOrange.opacity(0.25)) }
 
-        // Subtle ground glow
         for x in 6...9 {
             p(ctx, x, 13, cw, ch, warmGlow.opacity(b * 0.2))
         }
     }
 
-    // MARK: - Smoke wisps (embers)
+    // MARK: - Smoke wisps
 
     private func drawSmoke(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
         let drift = frame % 2
         p(ctx, 7 + drift, 8, cw, ch, smoke.opacity(0.2))
         p(ctx, 8 - drift, 7, cw, ch, smoke.opacity(0.15))
         p(ctx, 7 + drift, 6, cw, ch, smoke.opacity(0.08))
+    }
+
+    // MARK: - Marshmallow Easter egg 🍡
+
+    private func drawMarshmallow(ctx: GraphicsContext, cw: CGFloat, ch: CGFloat, frame: Int) {
+        // Stick coming from the right
+        p(ctx, 12, 10, cw, ch, stickBrown)
+        p(ctx, 11, 9, cw, ch, stickBrown)
+        p(ctx, 12, 9, cw, ch, stickBrown)
+
+        // Marshmallow on the end — toasting animation
+        let toastColor = frame % 4 < 2 ? mallowWhite : mallowBrown
+        p(ctx, 11, 8, cw, ch, toastColor)
+        p(ctx, 12, 8, cw, ch, mallowWhite)
     }
 }

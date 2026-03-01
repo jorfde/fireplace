@@ -4,11 +4,16 @@ struct SetupView: View {
     @Bindable var appState: AppState
     var onStart: () -> Void
 
-    @FocusState private var isTaskFieldFocused: Bool
+    @FocusState private var focusedField: SetupField?
+
+    enum SetupField: Hashable {
+        case taskName
+        case duration
+    }
 
     var body: some View {
         VStack(spacing: 20) {
-            FireplaceCanvasView(state: .idle)
+            FireplaceCanvasView(state: .idle, streakDays: appState.streakDays)
                 .frame(width: 140, height: 140)
 
             VStack(spacing: 12) {
@@ -21,18 +26,37 @@ struct SetupView: View {
                     .font(.body)
                     .padding(8)
                     .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
-                    .focused($isTaskFieldFocused)
+                    .focused($focusedField, equals: .taskName)
+                    .onSubmit { focusedField = .duration }
             }
 
             HStack(spacing: 8) {
                 ForEach(appState.availableDurations, id: \.self) { minutes in
                     DurationChip(
                         minutes: minutes,
-                        isSelected: appState.selectedDuration == minutes
+                        isSelected: appState.selectedDuration == minutes,
+                        isFocused: focusedField == .duration && appState.selectedDuration == minutes
                     ) {
                         appState.selectedDuration = minutes
                     }
                 }
+            }
+            .focused($focusedField, equals: .duration)
+            .onKeyPress(.leftArrow) {
+                moveDuration(by: -1)
+                return .handled
+            }
+            .onKeyPress(.rightArrow) {
+                moveDuration(by: 1)
+                return .handled
+            }
+            .onKeyPress(.return) {
+                if focusedField == .duration {
+                    appState.startSession()
+                    onStart()
+                    return .handled
+                }
+                return .ignored
             }
 
             Button(action: {
@@ -45,17 +69,32 @@ struct SetupView: View {
             .buttonStyle(.borderedProminent)
             .tint(.orange)
             .controlSize(.large)
+            .keyboardShortcut(.return, modifiers: .command)
+
+            if appState.streakDays > 0 {
+                Text("\(appState.streakDays) day streak \u{1F525}")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(24)
         .onAppear {
-            isTaskFieldFocused = true
+            focusedField = .taskName
         }
+    }
+
+    private func moveDuration(by offset: Int) {
+        let durations = appState.availableDurations
+        guard let idx = durations.firstIndex(of: appState.selectedDuration) else { return }
+        let newIdx = max(0, min(durations.count - 1, idx + offset))
+        appState.selectedDuration = durations[newIdx]
     }
 }
 
 struct DurationChip: View {
     let minutes: Int
     let isSelected: Bool
+    var isFocused: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -68,9 +107,12 @@ struct DurationChip: View {
                     isSelected ? AnyShapeStyle(.orange) : AnyShapeStyle(.quaternary),
                     in: RoundedRectangle(cornerRadius: 6)
                 )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(isFocused ? Color.orange.opacity(0.6) : .clear, lineWidth: 2)
+                )
         }
         .buttonStyle(.plain)
     }
 }
-
 
