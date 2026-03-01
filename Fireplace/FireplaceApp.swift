@@ -111,6 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         case .completed:
             focusTimer.stop()
+            soundEngine.stop()
             menuBarCompanion.showIdle()
             appState.recordSessionForStreak()
             dockTileRenderer.updateState(.embers, marshmallow: false, streak: appState.streakDays)
