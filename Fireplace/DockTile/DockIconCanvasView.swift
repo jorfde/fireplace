@@ -35,7 +35,8 @@ struct DockIconCanvasView: View {
     private let mallowWhite = Color(red: 0.95, green: 0.92, blue: 0.88)
     private let mallowGold = Color(red: 0.75, green: 0.55, blue: 0.25)
 
-    // Layout: ground at very bottom, fire fills most of the icon
+    private let iconBg = Color(red: 0.12, green: 0.10, blue: 0.18)
+
     // Ground: rows 28-31  |  Logs: rows 26-28  |  Fire: rows 8-25
 
     var body: some View {
@@ -44,6 +45,10 @@ struct DockIconCanvasView: View {
                 let cw = size.width / CGFloat(gridSize)
                 let ch = size.height / CGFloat(gridSize)
                 let frame = Int(context.date.timeIntervalSinceReferenceDate * fps) % 4
+
+                // Fill with dark background so the icon has the standard macOS shape
+                let bgRect = CGRect(origin: .zero, size: size)
+                ctx.fill(Path(roundedRect: bgRect, cornerSize: CGSize(width: size.width * 0.22, height: size.height * 0.22), style: .continuous), with: .color(iconBg))
 
                 drawGround(ctx: ctx, cw: cw, ch: ch)
                 drawStoneRing(ctx: ctx, cw: cw, ch: ch)

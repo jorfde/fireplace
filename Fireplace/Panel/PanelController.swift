@@ -130,6 +130,13 @@ struct FocusingView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
+            Button("Extinguish early") {
+                appState.extinguishEarly()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .foregroundStyle(.secondary)
+
             Button("Hide") {
                 onClose()
             }
