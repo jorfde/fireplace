@@ -13,78 +13,80 @@ struct SetupView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack(spacing: 0) {
-                FireplaceCanvasView(state: .idle, streakDays: appState.streakDays)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 150)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal, 12)
-                    .padding(.top, 4)
-
-                VStack(spacing: 16) {
-                    VStack(spacing: 10) {
-                        Text("What are you working on?")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-
-                        TextField("Name your task", text: $appState.draftTaskName)
-                            .textFieldStyle(.plain)
-                            .font(.body)
-                            .padding(8)
-                            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
-                            .focused($focusedField, equals: .taskName)
-                            .onSubmit { focusedField = .duration }
-                    }
-
-                    HStack(spacing: 8) {
-                        ForEach(appState.availableDurations, id: \.self) { minutes in
-                            DurationChip(
-                                minutes: minutes,
-                                isSelected: appState.selectedDuration == minutes,
-                                isFocused: focusedField == .duration && appState.selectedDuration == minutes
-                            ) {
-                                appState.selectedDuration = minutes
-                            }
-                        }
-                    }
-                    .focused($focusedField, equals: .duration)
-                    .onKeyPress(.leftArrow) { moveDuration(by: -1); return .handled }
-                    .onKeyPress(.rightArrow) { moveDuration(by: 1); return .handled }
-                    .onKeyPress(.return) {
-                        if focusedField == .duration { appState.startSession(); onStart(); return .handled }
-                        return .ignored
-                    }
-
-                    Button(action: { appState.startSession(); onStart() }) {
-                        Label("Light the fire", systemImage: "flame.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-                    .controlSize(.large)
-                    .keyboardShortcut(.return, modifiers: .command)
-
-                    if appState.streakDays > 0 {
-                        Text("\(appState.streakDays) day streak \u{1F525}")
-                            .font(.caption)
+        VStack(spacing: 0) {
+            // Toolbar row — sits in the transparent title bar area
+            HStack {
+                Spacer()
+                if !appState.sessionHistory.sessions.isEmpty, let onShowHistory {
+                    Button(action: { onShowHistory() }) {
+                        Image(systemName: "book.fill")
+                            .font(.system(size: 11))
                             .foregroundStyle(.tertiary)
                     }
+                    .buttonStyle(.plain)
+                    .help("Session history")
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
             }
+            .padding(.horizontal, 12)
+            .frame(height: 20)
 
-            if !appState.sessionHistory.sessions.isEmpty, let onShowHistory {
-                Button(action: { onShowHistory() }) {
-                    Image(systemName: "book.fill")
-                        .font(.system(size: 13))
+            FireplaceCanvasView(state: .idle, streakDays: appState.streakDays)
+                .frame(maxWidth: .infinity)
+                .frame(height: 150)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, 12)
+
+            VStack(spacing: 16) {
+                VStack(spacing: 10) {
+                    Text("What are you working on?")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    TextField("Name your task", text: $appState.draftTaskName)
+                        .textFieldStyle(.plain)
+                        .font(.body)
+                        .padding(8)
+                        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
+                        .focused($focusedField, equals: .taskName)
+                        .onSubmit { focusedField = .duration }
+                }
+
+                HStack(spacing: 8) {
+                    ForEach(appState.availableDurations, id: \.self) { minutes in
+                        DurationChip(
+                            minutes: minutes,
+                            isSelected: appState.selectedDuration == minutes,
+                            isFocused: focusedField == .duration && appState.selectedDuration == minutes
+                        ) {
+                            appState.selectedDuration = minutes
+                        }
+                    }
+                }
+                .focused($focusedField, equals: .duration)
+                .onKeyPress(.leftArrow) { moveDuration(by: -1); return .handled }
+                .onKeyPress(.rightArrow) { moveDuration(by: 1); return .handled }
+                .onKeyPress(.return) {
+                    if focusedField == .duration { appState.startSession(); onStart(); return .handled }
+                    return .ignored
+                }
+
+                Button(action: { appState.startSession(); onStart() }) {
+                    Label("Light the fire", systemImage: "flame.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+                .controlSize(.large)
+                .keyboardShortcut(.return, modifiers: .command)
+
+                if appState.streakDays > 0 {
+                    Text("\(appState.streakDays) day streak \u{1F525}")
+                        .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
-                .buttonStyle(.plain)
-                .help("Session history")
-                .padding(12)
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
         }
         .onAppear { focusedField = .taskName }
     }
