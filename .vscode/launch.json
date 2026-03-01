@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:fireplace}",
+            "name": "Debug Fireplace",
+            "target": "Fireplace",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug Fireplace"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:fireplace}",
+            "name": "Release Fireplace",
+            "target": "Fireplace",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release Fireplace"
+        }
+    ]
+}
