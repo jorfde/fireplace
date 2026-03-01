@@ -163,46 +163,42 @@ struct FocusingView: View {
             .padding(.horizontal, 12)
             .padding(.top, 4)
 
-            VStack(spacing: 12) {
-                VStack(spacing: 4) {
-                    Text("Your current task is")
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
-
-                    Text(taskName)
-                        .font(.headline)
-                        .lineLimit(1)
-                }
+            VStack(spacing: 14) {
+                Text(taskName)
+                    .font(.headline)
+                    .lineLimit(1)
 
                 ZStack {
                     Circle()
-                        .stroke(.quaternary, lineWidth: 3)
-                        .frame(width: 52, height: 52)
+                        .stroke(.quaternary, lineWidth: 4)
+                        .frame(width: 100, height: 100)
 
                     Circle()
                         .trim(from: 0, to: focusTimer.progress)
-                        .stroke(.orange, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                        .frame(width: 52, height: 52)
+                        .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .frame(width: 100, height: 100)
                         .rotationEffect(.degrees(-90))
 
                     Text(timeString)
-                        .font(.system(.caption2, design: .monospaced, weight: .medium))
+                        .font(.system(.title2, design: .monospaced, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
 
-                Button("Extinguish early") {
-                    appState.extinguishEarly()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .foregroundStyle(.secondary)
+                HStack(spacing: 0) {
+                    Button("Extinguish") { appState.extinguishEarly() }
+                        .buttonStyle(.plain)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
 
-                Button("Hide") {
-                    onClose()
+                    Text(" \u{00B7} ")
+                        .font(.caption)
+                        .foregroundStyle(.quaternary)
+
+                    Button("Hide") { onClose() }
+                        .buttonStyle(.plain)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.tertiary)
-                .font(.subheadline)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
