@@ -94,50 +94,114 @@ struct HistoryView: View {
     }
 }
 
-// MARK: - 30-day dot calendar
+// MARK: - 30-day calendar view
 
 struct DotCalendarView: View {
     let sessions: [SessionRecord]
 
-    private let days = 30
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
+    private let dayLabels = ["M", "T", "W", "T", "F", "S", "S"]
 
-    private var activeDays: Set<Int> {
+    private var calendarDays: [CalendarDay] {
         let cal = Calendar.current
         let today = cal.startOfDay(for: .now)
-        var active = Set<Int>()
-        for session in sessions {
-            let sessionDay = cal.startOfDay(for: session.date)
-            if let diff = cal.dateComponents([.day], from: sessionDay, to: today).day, diff >= 0, diff < days {
-                active.insert(diff)
-            }
+
+        // Go back 29 days (30 days total including today)
+        guard let startDate = cal.date(byAdding: .day, value: -29, to: today) else { return [] }
+
+        // Find the Monday on or before startDate for grid alignment
+        let startWeekday = cal.component(.weekday, from: startDate)
+        // weekday: 1=Sun, 2=Mon... Convert to Mon=0
+        let mondayOffset = (startWeekday + 5) % 7
+        guard let gridStart = cal.date(byAdding: .day, value: -mondayOffset, to: startDate) else { return [] }
+
+        var days: [CalendarDay] = []
+        var current = gridStart
+
+        // Fill grid until we pass today
+        while current <= today {
+            let count = sessionCount(for: current)
+            let inRange = current >= startDate && current <= today
+            let isToday = cal.isDateInToday(current)
+            let dayNum = cal.component(.day, from: current)
+            let month = cal.component(.month, from: current)
+
+            days.append(CalendarDay(
+                date: current,
+                dayNumber: dayNum,
+                month: month,
+                sessionCount: count,
+                inRange: inRange,
+                isToday: isToday
+            ))
+
+            current = cal.date(byAdding: .day, value: 1, to: current)!
         }
-        return active
+
+        return days
     }
 
-    private func sessionCount(daysAgo: Int) -> Int {
+    private var monthLabel: String {
         let cal = Calendar.current
-        let today = cal.startOfDay(for: .now)
-        guard let targetDay = cal.date(byAdding: .day, value: -daysAgo, to: today) else { return 0 }
-        let nextDay = cal.date(byAdding: .day, value: 1, to: targetDay)!
-        return sessions.filter { $0.date >= targetDay && $0.date < nextDay }.count
+        let today = Date.now
+        guard let start = cal.date(byAdding: .day, value: -29, to: today) else { return "" }
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMM"
+        let startMonth = fmt.string(from: start)
+        let endMonth = fmt.string(from: today)
+        let year = cal.component(.year, from: today)
+        if startMonth == endMonth {
+            return "\(startMonth) \(year)"
+        }
+        return "\(startMonth) – \(endMonth) \(year)"
+    }
+
+    private func sessionCount(for date: Date) -> Int {
+        let cal = Calendar.current
+        let dayStart = cal.startOfDay(for: date)
+        let dayEnd = cal.date(byAdding: .day, value: 1, to: dayStart)!
+        return sessions.filter { $0.date >= dayStart && $0.date < dayEnd }.count
     }
 
     var body: some View {
         VStack(spacing: 6) {
             HStack {
-                Text("Last 30 days")
+                Text(monthLabel)
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.tertiary)
                 Spacer()
             }
 
-            LazyVGrid(columns: columns, spacing: 4) {
-                ForEach((0..<days).reversed(), id: \.self) { daysAgo in
-                    let count = sessionCount(daysAgo: daysAgo)
-                    Circle()
-                        .fill(dotColor(count: count))
-                        .frame(width: 10, height: 10)
+            // Day-of-week headers
+            LazyVGrid(columns: columns, spacing: 2) {
+                ForEach(dayLabels, id: \.self) { label in
+                    Text(label)
+                        .font(.system(size: 8, weight: .medium, design: .rounded))
+                        .foregroundStyle(.quaternary)
+                        .frame(height: 12)
+                }
+            }
+
+            // Calendar grid
+            LazyVGrid(columns: columns, spacing: 3) {
+                ForEach(calendarDays) { day in
+                    if day.inRange {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(cellColor(count: day.sessionCount))
+                                .frame(height: 24)
+
+                            Text("\(day.dayNumber)")
+                                .font(.system(size: 9, weight: day.isToday ? .bold : .regular, design: .rounded))
+                                .foregroundStyle(day.sessionCount > 0 ? .white : .secondary)
+                        }
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(day.isToday ? Color.orange.opacity(0.7) : .clear, lineWidth: 1.5)
+                        )
+                    } else {
+                        Color.clear.frame(height: 24)
+                    }
                 }
             }
         }
@@ -145,14 +209,24 @@ struct DotCalendarView: View {
         .background(.quaternary.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
     }
 
-    private func dotColor(count: Int) -> Color {
+    private func cellColor(count: Int) -> Color {
         switch count {
-        case 0: return .secondary.opacity(0.15)
-        case 1: return .orange.opacity(0.4)
-        case 2: return .orange.opacity(0.65)
-        default: return .orange.opacity(0.9)
+        case 0: return .secondary.opacity(0.08)
+        case 1: return .orange.opacity(0.35)
+        case 2: return .orange.opacity(0.55)
+        default: return .orange.opacity(0.8)
         }
     }
+}
+
+struct CalendarDay: Identifiable {
+    let id = UUID()
+    let date: Date
+    let dayNumber: Int
+    let month: Int
+    let sessionCount: Int
+    let inRange: Bool
+    let isToday: Bool
 }
 
 // MARK: - Session row
