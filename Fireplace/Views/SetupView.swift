@@ -13,68 +13,72 @@ struct SetupView: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            FireplaceCanvasView(state: .idle, streakDays: appState.streakDays)
-                .frame(width: 140, height: 140)
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 20) {
+                FireplaceCanvasView(state: .idle, streakDays: appState.streakDays)
+                    .frame(width: 140, height: 140)
 
-            VStack(spacing: 12) {
-                Text("What are you working on?")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                VStack(spacing: 12) {
+                    Text("What are you working on?")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
 
-                TextField("Name your task", text: $appState.draftTaskName)
-                    .textFieldStyle(.plain)
-                    .font(.body)
-                    .padding(8)
-                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
-                    .focused($focusedField, equals: .taskName)
-                    .onSubmit { focusedField = .duration }
-            }
+                    TextField("Name your task", text: $appState.draftTaskName)
+                        .textFieldStyle(.plain)
+                        .font(.body)
+                        .padding(8)
+                        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
+                        .focused($focusedField, equals: .taskName)
+                        .onSubmit { focusedField = .duration }
+                }
 
-            HStack(spacing: 8) {
-                ForEach(appState.availableDurations, id: \.self) { minutes in
-                    DurationChip(
-                        minutes: minutes,
-                        isSelected: appState.selectedDuration == minutes,
-                        isFocused: focusedField == .duration && appState.selectedDuration == minutes
-                    ) {
-                        appState.selectedDuration = minutes
+                HStack(spacing: 8) {
+                    ForEach(appState.availableDurations, id: \.self) { minutes in
+                        DurationChip(
+                            minutes: minutes,
+                            isSelected: appState.selectedDuration == minutes,
+                            isFocused: focusedField == .duration && appState.selectedDuration == minutes
+                        ) {
+                            appState.selectedDuration = minutes
+                        }
                     }
                 }
-            }
-            .focused($focusedField, equals: .duration)
-            .onKeyPress(.leftArrow) { moveDuration(by: -1); return .handled }
-            .onKeyPress(.rightArrow) { moveDuration(by: 1); return .handled }
-            .onKeyPress(.return) {
-                if focusedField == .duration { appState.startSession(); onStart(); return .handled }
-                return .ignored
-            }
+                .focused($focusedField, equals: .duration)
+                .onKeyPress(.leftArrow) { moveDuration(by: -1); return .handled }
+                .onKeyPress(.rightArrow) { moveDuration(by: 1); return .handled }
+                .onKeyPress(.return) {
+                    if focusedField == .duration { appState.startSession(); onStart(); return .handled }
+                    return .ignored
+                }
 
-            Button(action: { appState.startSession(); onStart() }) {
-                Label("Light the fire", systemImage: "flame.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
-            .controlSize(.large)
-            .keyboardShortcut(.return, modifiers: .command)
+                Button(action: { appState.startSession(); onStart() }) {
+                    Label("Light the fire", systemImage: "flame.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+                .controlSize(.large)
+                .keyboardShortcut(.return, modifiers: .command)
 
-            if appState.streakDays > 0 {
-                Text("\(appState.streakDays) day streak \u{1F525}")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                if appState.streakDays > 0 {
+                    Text("\(appState.streakDays) day streak \u{1F525}")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
             }
+            .padding(24)
 
             if !appState.sessionHistory.sessions.isEmpty, let onShowHistory {
-                Button("History") {
-                    onShowHistory()
+                Button(action: { onShowHistory() }) {
+                    Image(systemName: "book.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .help("Session history")
+                .padding(12)
             }
         }
-        .padding(24)
         .onAppear { focusedField = .taskName }
     }
 
