@@ -86,20 +86,27 @@ struct PanelContentView: View {
     @Bindable var appState: AppState
     var focusTimer: FocusTimer
     var onClose: () -> Void
+    @State private var showingHistory = false
 
     var body: some View {
         Group {
-            switch appState.phase {
-            case .idle:
-                SetupView(appState: appState, onStart: onClose)
-            case .lightingUp:
-                TransitionView(state: .lightingUp(progress: 0.5), label: "Lighting the fire...")
-            case .focusing:
-                FocusingView(appState: appState, focusTimer: focusTimer, onClose: onClose)
-            case .dyingDown:
-                TransitionView(state: .dyingDown(progress: 0.5), label: "The fire is dying down...")
-            case .completed:
-                CompletionView(appState: appState)
+            if showingHistory {
+                HistoryView(sessions: appState.sessionHistory.sessions) {
+                    showingHistory = false
+                }
+            } else {
+                switch appState.phase {
+                case .idle:
+                    SetupView(appState: appState, onStart: onClose, onShowHistory: { showingHistory = true })
+                case .lightingUp:
+                    TransitionView(state: .lightingUp(progress: 0.5), label: "Lighting the fire...")
+                case .focusing:
+                    FocusingView(appState: appState, focusTimer: focusTimer, onClose: onClose)
+                case .dyingDown:
+                    TransitionView(state: .dyingDown(progress: 0.5), label: "The fire is dying down...")
+                case .completed:
+                    CompletionView(appState: appState)
+                }
             }
         }
         .frame(width: 280, height: 380)

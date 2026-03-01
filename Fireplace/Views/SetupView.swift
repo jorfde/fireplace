@@ -3,6 +3,7 @@ import SwiftUI
 struct SetupView: View {
     @Bindable var appState: AppState
     var onStart: () -> Void
+    var onShowHistory: (() -> Void)? = nil
 
     @FocusState private var focusedField: SetupField?
 
@@ -62,6 +63,15 @@ struct SetupView: View {
                 Text("\(appState.streakDays) day streak \u{1F525}")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
+            }
+
+            if !appState.sessionHistory.sessions.isEmpty, let onShowHistory {
+                Button("History") {
+                    onShowHistory()
+                }
+                .buttonStyle(.plain)
+                .font(.caption)
+                .foregroundStyle(.tertiary)
             }
         }
         .padding(24)
