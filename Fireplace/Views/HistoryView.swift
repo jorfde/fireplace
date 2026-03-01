@@ -112,10 +112,11 @@ struct DotCalendarView: View {
     private var monthLabel: String {
         let cal = Calendar.current
         let today = Date.now
-        guard let start = cal.date(byAdding: .day, value: -29, to: today) else { return "" }
+        // Use a week into the range to avoid single-day edge months
+        guard let meaningful = cal.date(byAdding: .day, value: -22, to: today) else { return "" }
         let fmt = DateFormatter()
         fmt.dateFormat = "MMM"
-        let startMonth = fmt.string(from: start)
+        let startMonth = fmt.string(from: meaningful)
         let endMonth = fmt.string(from: today)
         let year = cal.component(.year, from: today)
         return startMonth == endMonth ? "\(startMonth) \(year)" : "\(startMonth) – \(endMonth) \(year)"
