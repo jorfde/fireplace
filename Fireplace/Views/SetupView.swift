@@ -83,10 +83,10 @@ struct DurationChip: View {
 
     var body: some View {
         Button(action: action) {
-            Text("\(minutes)")
+            Text("\(minutes)m")
                 .font(.system(.caption, design: .rounded, weight: .semibold))
                 .foregroundStyle(isSelected ? .white : .secondary)
-                .frame(width: 44, height: 28)
+                .frame(width: 50, height: 28)
                 .background(
                     isSelected ? AnyShapeStyle(.orange) : AnyShapeStyle(.quaternary),
                     in: RoundedRectangle(cornerRadius: 6)
