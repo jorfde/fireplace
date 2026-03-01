@@ -87,138 +87,43 @@ struct PanelContentView: View {
     var focusTimer: FocusTimer
     var onClose: () -> Void
 
-    private var canvasState: FireplaceAnimationState {
-        switch appState.phase {
-        case .idle: return .idle
-        case .lightingUp: return .lightingUp(progress: 0.5)
-        case .focusing: return .burning
-        case .dyingDown: return .dyingDown(progress: 0.5)
-        case .completed: return .embers
-        }
-    }
-
     var body: some View {
-        ZStack {
-            FireplaceCanvasView(
-                state: canvasState,
-                showMarshmallow: appState.isMarshmallow,
-                streakDays: appState.streakDays,
-                timeProgress: focusTimer.progress
-            )
-            .ignoresSafeArea()
-
-            VStack {
-                Spacer()
-
-                Group {
-                    switch appState.phase {
-                    case .idle:
-                        SetupOverlay(appState: appState, onStart: onClose)
-                    case .lightingUp:
-                        LightingUpOverlay()
-                    case .focusing:
-                        FocusingOverlay(appState: appState, focusTimer: focusTimer, onClose: onClose)
-                    case .dyingDown:
-                        DyingDownOverlay()
-                    case .completed:
-                        CompletionOverlay(appState: appState)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+        Group {
+            switch appState.phase {
+            case .idle:
+                SetupView(appState: appState, onStart: onClose)
+            case .lightingUp:
+                TransitionView(state: .lightingUp(progress: 0.5), label: "Lighting the fire...")
+            case .focusing:
+                FocusingView(appState: appState, focusTimer: focusTimer, onClose: onClose)
+            case .dyingDown:
+                TransitionView(state: .dyingDown(progress: 0.5), label: "The fire is dying down...")
+            case .completed:
+                CompletionView(appState: appState)
             }
         }
-        .frame(width: 280, height: 400)
+        .frame(width: 280, height: 380)
     }
 }
 
-// MARK: - Overlay views (float on top of the campfire scene)
-
-struct SetupOverlay: View {
-    @Bindable var appState: AppState
-    var onStart: () -> Void
-    @FocusState private var focusedField: SetupField?
-
-    enum SetupField: Hashable { case taskName, duration }
+struct TransitionView: View {
+    let state: FireplaceAnimationState
+    let label: String
 
     var body: some View {
-        VStack(spacing: 10) {
-            Text("What are you working on?")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.white.opacity(0.8))
-                .shadow(color: .black.opacity(0.5), radius: 2, y: 1)
+        VStack(spacing: 16) {
+            FireplaceCanvasView(state: state)
+                .frame(width: 160, height: 160)
 
-            TextField("Name your task", text: $appState.draftTaskName)
-                .textFieldStyle(.plain)
-                .font(.body)
-                .padding(8)
-                .background(.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
-                .foregroundStyle(.white)
-                .focused($focusedField, equals: .taskName)
-                .onSubmit { focusedField = .duration }
-
-            HStack(spacing: 8) {
-                ForEach(appState.availableDurations, id: \.self) { minutes in
-                    Button { appState.selectedDuration = minutes } label: {
-                        Text("\(minutes)")
-                            .font(.system(.caption, design: .rounded, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 28)
-                            .background(
-                                appState.selectedDuration == minutes ? Color.orange : Color.white.opacity(0.15),
-                                in: RoundedRectangle(cornerRadius: 6)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .focused($focusedField, equals: .duration)
-            .onKeyPress(.leftArrow) { moveDuration(by: -1); return .handled }
-            .onKeyPress(.rightArrow) { moveDuration(by: 1); return .handled }
-            .onKeyPress(.return) {
-                if focusedField == .duration { appState.startSession(); onStart(); return .handled }
-                return .ignored
-            }
-
-            Button(action: { appState.startSession(); onStart() }) {
-                Label("Light the fire", systemImage: "flame.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
-            .controlSize(.large)
-            .keyboardShortcut(.return, modifiers: .command)
-
-            if appState.streakDays > 0 {
-                Text("\(appState.streakDays) day streak \u{1F525}")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.5))
-            }
+            Text(label)
+                .font(.headline)
+                .foregroundStyle(.secondary)
         }
-        .padding(14)
-        .background(.ultraThinMaterial.opacity(0.6), in: RoundedRectangle(cornerRadius: 12))
-        .onAppear { focusedField = .taskName }
-    }
-
-    private func moveDuration(by offset: Int) {
-        let d = appState.availableDurations
-        guard let i = d.firstIndex(of: appState.selectedDuration) else { return }
-        appState.selectedDuration = d[max(0, min(d.count - 1, i + offset))]
+        .padding(24)
     }
 }
 
-struct LightingUpOverlay: View {
-    var body: some View {
-        Text("Lighting the fire...")
-            .font(.headline)
-            .foregroundStyle(.white.opacity(0.8))
-            .shadow(color: .black.opacity(0.5), radius: 2, y: 1)
-            .padding(14)
-            .background(.ultraThinMaterial.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-struct FocusingOverlay: View {
+struct FocusingView: View {
     @Bindable var appState: AppState
     var focusTimer: FocusTimer
     var onClose: () -> Void
@@ -234,21 +139,28 @@ struct FocusingOverlay: View {
     }
 
     var body: some View {
-        VStack(spacing: 10) {
-            Text("Your current task is")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.5))
-                .shadow(color: .black.opacity(0.5), radius: 2, y: 1)
+        VStack(spacing: 14) {
+            FireplaceCanvasView(
+                state: .burning,
+                showMarshmallow: appState.isMarshmallow,
+                streakDays: appState.streakDays,
+                timeProgress: focusTimer.progress
+            )
+            .frame(width: 140, height: 140)
 
-            Text(taskName)
-                .font(.headline)
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .shadow(color: .black.opacity(0.5), radius: 2, y: 1)
+            VStack(spacing: 4) {
+                Text("Your current task is")
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+
+                Text(taskName)
+                    .font(.headline)
+                    .lineLimit(1)
+            }
 
             ZStack {
                 Circle()
-                    .stroke(.white.opacity(0.15), lineWidth: 3)
+                    .stroke(.quaternary, lineWidth: 3)
                     .frame(width: 52, height: 52)
 
                 Circle()
@@ -259,38 +171,28 @@ struct FocusingOverlay: View {
 
                 Text(timeString)
                     .font(.system(.caption2, design: .monospaced, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 16) {
-                Button("Extinguish") { appState.extinguishEarly() }
-                    .buttonStyle(.plain)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.5))
-
-                Button("Hide") { onClose() }
-                    .buttonStyle(.plain)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.3))
+            Button("Extinguish early") {
+                appState.extinguishEarly()
             }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .foregroundStyle(.secondary)
+
+            Button("Hide") {
+                onClose()
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.tertiary)
+            .font(.subheadline)
         }
-        .padding(14)
-        .background(.ultraThinMaterial.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
+        .padding(20)
     }
 }
 
-struct DyingDownOverlay: View {
-    var body: some View {
-        Text("The fire is dying down...")
-            .font(.headline)
-            .foregroundStyle(.white.opacity(0.8))
-            .shadow(color: .black.opacity(0.5), radius: 2, y: 1)
-            .padding(14)
-            .background(.ultraThinMaterial.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-struct CompletionOverlay: View {
+struct CompletionView: View {
     @Bindable var appState: AppState
     @FocusState private var isJournalFocused: Bool
 
@@ -305,54 +207,59 @@ struct CompletionOverlay: View {
     }
 
     var body: some View {
-        VStack(spacing: 10) {
-            Text("The fire has gone out")
-                .font(.headline)
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.5), radius: 2, y: 1)
+        VStack(spacing: 14) {
+            FireplaceCanvasView(state: .embers, streakDays: appState.streakDays)
+                .frame(width: 130, height: 130)
 
-            Text("\u{201C}\(taskName)\u{201D}")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.6))
-                .lineLimit(1)
+            VStack(spacing: 6) {
+                Text("The fire has gone out")
+                    .font(.headline)
+
+                Text("\u{201C}\(taskName)\u{201D}")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
 
             Text("Did you finish?")
                 .font(.body)
-                .foregroundStyle(.white.opacity(0.8))
 
             HStack(spacing: 12) {
                 Button("Yes \u{2713}") { finishSession(finished: true) }
                     .buttonStyle(.borderedProminent)
                     .tint(.green.opacity(0.8))
-                    .controlSize(.regular)
+                    .controlSize(.large)
 
                 Button("Not yet") { finishSession(finished: false) }
                     .buttonStyle(.bordered)
-                    .tint(.white.opacity(0.3))
-                    .controlSize(.regular)
+                    .controlSize(.large)
             }
 
-            TextField("How did it go?", text: $appState.journalEntry)
-                .textFieldStyle(.plain)
-                .font(.caption)
-                .padding(6)
-                .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 5))
-                .foregroundStyle(.white)
-                .focused($isJournalFocused)
+            VStack(spacing: 6) {
+                Text("How did it go?")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+
+                TextField("One sentence...", text: $appState.journalEntry)
+                    .textFieldStyle(.plain)
+                    .font(.caption)
+                    .padding(6)
+                    .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 5))
+                    .focused($isJournalFocused)
+            }
 
             Button("Start another \u{2192}") { finishSession(finished: false) }
                 .buttonStyle(.plain)
-                .foregroundStyle(.white.opacity(0.3))
-                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .font(.subheadline)
 
             if appState.sessionHistory.thisWeekCount > 0 {
                 Text("\(appState.sessionHistory.thisWeekCount) sessions this week \u{00B7} \(appState.sessionHistory.thisWeekMinutes) min")
                     .font(.system(.caption2, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.3))
+                    .foregroundStyle(.tertiary)
             }
         }
-        .padding(14)
-        .background(.ultraThinMaterial.opacity(0.6), in: RoundedRectangle(cornerRadius: 12))
+        .padding(18)
     }
 
     private func finishSession(finished: Bool) {

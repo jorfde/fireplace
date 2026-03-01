@@ -42,27 +42,14 @@ struct SetupView: View {
                 }
             }
             .focused($focusedField, equals: .duration)
-            .onKeyPress(.leftArrow) {
-                moveDuration(by: -1)
-                return .handled
-            }
-            .onKeyPress(.rightArrow) {
-                moveDuration(by: 1)
-                return .handled
-            }
+            .onKeyPress(.leftArrow) { moveDuration(by: -1); return .handled }
+            .onKeyPress(.rightArrow) { moveDuration(by: 1); return .handled }
             .onKeyPress(.return) {
-                if focusedField == .duration {
-                    appState.startSession()
-                    onStart()
-                    return .handled
-                }
+                if focusedField == .duration { appState.startSession(); onStart(); return .handled }
                 return .ignored
             }
 
-            Button(action: {
-                appState.startSession()
-                onStart()
-            }) {
+            Button(action: { appState.startSession(); onStart() }) {
                 Label("Light the fire", systemImage: "flame.fill")
                     .frame(maxWidth: .infinity)
             }
@@ -78,16 +65,13 @@ struct SetupView: View {
             }
         }
         .padding(24)
-        .onAppear {
-            focusedField = .taskName
-        }
+        .onAppear { focusedField = .taskName }
     }
 
     private func moveDuration(by offset: Int) {
-        let durations = appState.availableDurations
-        guard let idx = durations.firstIndex(of: appState.selectedDuration) else { return }
-        let newIdx = max(0, min(durations.count - 1, idx + offset))
-        appState.selectedDuration = durations[newIdx]
+        let d = appState.availableDurations
+        guard let i = d.firstIndex(of: appState.selectedDuration) else { return }
+        appState.selectedDuration = d[max(0, min(d.count - 1, i + offset))]
     }
 }
 
@@ -115,4 +99,3 @@ struct DurationChip: View {
         .buttonStyle(.plain)
     }
 }
-
