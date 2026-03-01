@@ -79,3 +79,4 @@ final class DockTileRenderer {
         return finalImage
     }
 }
+

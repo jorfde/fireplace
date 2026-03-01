@@ -268,3 +268,4 @@ extension AppDelegate: NSMenuDelegate {
         return menu
     }
 }
+

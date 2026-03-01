@@ -116,3 +116,4 @@ struct StaticCampfireIcon: View {
         ctx.fill(Path(CGRect(x: CGFloat(x) * cw, y: CGFloat(y) * ch, width: cw + 0.5, height: ch + 0.5)), with: .color(color))
     }
 }
+
