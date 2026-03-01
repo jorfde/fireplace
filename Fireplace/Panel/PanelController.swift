@@ -214,6 +214,18 @@ struct FocusingView: View {
                         .font(.caption)
                         .foregroundStyle(.quaternary)
 
+                    Button(action: { appState.soundEnabled.toggle() }) {
+                        Image(systemName: appState.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(appState.soundEnabled ? "Mute" : "Unmute")
+
+                    Text(" \u{00B7} ")
+                        .font(.caption)
+                        .foregroundStyle(.quaternary)
+
                     Button("Hide") { onClose() }
                         .buttonStyle(.plain)
                         .font(.caption)
