@@ -201,11 +201,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - App Icon
 
     private func setAppIcon() {
-        let size: CGFloat = 256
-        let plateSize: CGFloat = 220
-        let plateRadius: CGFloat = 48
+        let size: CGFloat = 512
+        let plateSize: CGFloat = 440
+        let plateRadius: CGFloat = 96
         let renderer = ImageRenderer(content:
-            DockIconCanvasView(state: .burning)
+            StaticCampfireIcon()
                 .frame(width: plateSize, height: plateSize)
                 .clipShape(RoundedRectangle(cornerRadius: plateRadius, style: .continuous))
         )
