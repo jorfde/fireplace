@@ -45,16 +45,24 @@ struct PixelButton: View {
 struct PixelTextField: View {
     let placeholder: String
     @Binding var text: String
-    var isFocused: FocusState<Bool>.Binding? = nil
 
     var body: some View {
-        TextField("", text: $text, prompt: Text(placeholder).foregroundColor(PixelTheme.textDim))
-            .textFieldStyle(.plain)
-            .font(.system(size: 13, weight: .medium, design: .monospaced))
-            .foregroundStyle(PixelTheme.text)
-            .padding(8)
-            .background(PixelTheme.bg)
-            .overlay(pixelBorder(color: PixelTheme.border))
+        ZStack(alignment: .leading) {
+            if text.isEmpty {
+                Text(placeholder)
+                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                    .foregroundStyle(PixelTheme.textDim)
+                    .padding(.leading, 8)
+            }
+
+            TextField("", text: $text)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
+                .foregroundStyle(PixelTheme.text)
+                .padding(8)
+        }
+        .background(PixelTheme.bg)
+        .overlay(pixelBorder(color: PixelTheme.border))
     }
 }
 
