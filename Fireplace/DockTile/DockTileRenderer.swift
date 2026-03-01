@@ -47,7 +47,9 @@ final class DockTileRenderer {
 
     private func renderFrame() {
         let image = renderIconImage()
-        NSApp.applicationIconImage = image
+        let imageView = NSImageView(image: image)
+        NSApp.dockTile.contentView = imageView
+        NSApp.dockTile.display()
     }
 
     private func renderIconImage() -> NSImage {

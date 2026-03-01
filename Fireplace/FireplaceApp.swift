@@ -27,7 +27,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Set app icon before becoming visible — needed for About, ⌘Tab, Mission Control
         setAppIcon()
         NSApp.setActivationPolicy(.regular)
-        cleanUpMenus()
         setupDockMenu()
 
         focusTimer.onComplete = { [weak self] in
@@ -199,32 +198,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appState.startSession()
     }
 
-    // MARK: - Menus
-
-    private func cleanUpMenus() {
-        let mainMenu = NSMenu()
-        let appMenuItem = NSMenuItem()
-        let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "About Fireplace", action: #selector(showAbout), keyEquivalent: "")
-        appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Quit Fireplace", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        appMenuItem.submenu = appMenu
-        mainMenu.addItem(appMenuItem)
-        NSApp.mainMenu = mainMenu
-    }
-
-    @objc private func showAbout() {
-        let options: [NSApplication.AboutPanelOptionKey: Any] = [
-            .applicationName: "Fireplace",
-            .applicationVersion: "1.0.0",
-            .version: "1",
-            .credits: NSAttributedString(
-                string: "A tiny cozy focus timer.",
-                attributes: [.foregroundColor: NSColor.secondaryLabelColor, .font: NSFont.systemFont(ofSize: 11)]
-            ),
-        ]
-        NSApp.orderFrontStandardAboutPanel(options: options)
-    }
+    // MARK: - App Icon
 
     private func setAppIcon() {
         let size: CGFloat = 256
