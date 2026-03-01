@@ -24,6 +24,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var transitionTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Set app icon before becoming visible — needed for About, ⌘Tab, Mission Control
+        setAppIcon()
         NSApp.setActivationPolicy(.regular)
         cleanUpMenus()
         setupDockMenu()
@@ -203,10 +205,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let mainMenu = NSMenu()
         let appMenuItem = NSMenuItem()
         let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "About Fireplace", action: #selector(showAbout), keyEquivalent: "")
+        appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit Fireplace", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appMenuItem.submenu = appMenu
         mainMenu.addItem(appMenuItem)
         NSApp.mainMenu = mainMenu
+    }
+
+    @objc private func showAbout() {
+        let options: [NSApplication.AboutPanelOptionKey: Any] = [
+            .applicationName: "Fireplace",
+            .applicationVersion: "1.0.0",
+            .version: "1",
+            .credits: NSAttributedString(
+                string: "A tiny cozy focus timer.",
+                attributes: [.foregroundColor: NSColor.secondaryLabelColor, .font: NSFont.systemFont(ofSize: 11)]
+            ),
+        ]
+        NSApp.orderFrontStandardAboutPanel(options: options)
+    }
+
+    private func setAppIcon() {
+        let size: CGFloat = 256
+        let plateSize: CGFloat = 220
+        let plateRadius: CGFloat = 48
+        let renderer = ImageRenderer(content:
+            DockIconCanvasView(state: .burning)
+                .frame(width: plateSize, height: plateSize)
+                .clipShape(RoundedRectangle(cornerRadius: plateRadius, style: .continuous))
+        )
+        renderer.scale = 2.0
+
+        let finalImage = NSImage(size: CGSize(width: size, height: size))
+        finalImage.lockFocus()
+        NSColor.clear.set()
+        NSRect(x: 0, y: 0, width: size, height: size).fill()
+        if let cgImage = renderer.cgImage {
+            let plate = NSImage(cgImage: cgImage, size: CGSize(width: plateSize, height: plateSize))
+            let inset = (size - plateSize) / 2
+            plate.draw(in: NSRect(x: inset, y: inset, width: plateSize, height: plateSize))
+        }
+        finalImage.unlockFocus()
+        NSApp.applicationIconImage = finalImage
     }
 }
 
