@@ -100,6 +100,18 @@ final class AppState {
         phase = .idle
     }
 
+    func restartWithMoreTime(duration: Int) {
+        if case .completed(let s) = phase {
+            let newSession = FocusSession(
+                taskName: s.taskName,
+                duration: TimeInterval(duration * 60),
+                startTime: .now
+            )
+            journalEntry = ""
+            phase = .lightingUp(newSession)
+        }
+    }
+
     // MARK: - Streak
 
     var streakDays: Int {

@@ -213,6 +213,10 @@ struct FocusingView: View {
 struct CompletionView: View {
     @Bindable var appState: AppState
     @FocusState private var isJournalFocused: Bool
+    @State private var showKeepGoing = false
+    @State private var selectedMoreTime = 15
+    @State private var celebrating = true
+    @State private var textVisible = false
 
     private var taskName: String {
         if case .completed(let s) = appState.phase { return s.taskName }
@@ -233,19 +237,22 @@ struct CompletionView: View {
         VStack(spacing: 0) {
             FireplaceCanvasView(state: .embers, streakDays: appState.streakDays)
                 .frame(maxWidth: .infinity)
-                .frame(height: 130)
+                .frame(height: celebrating ? 140 : 130)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .padding(.horizontal, 12)
                 .padding(.top, 4)
+                .animation(.easeInOut(duration: 1.5), value: celebrating)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 VStack(spacing: 6) {
                     Text("The fire has gone out")
                         .font(.headline)
 
                     Text("You focused for \(focusedMinutes) minute\(focusedMinutes == 1 ? "" : "s")")
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .rounded, weight: .medium))
                         .foregroundStyle(.orange)
+                        .opacity(textVisible ? 1 : 0)
+                        .offset(y: textVisible ? 0 : 8)
 
                     Text("\u{201C}\(taskName)\u{201D}")
                         .font(.caption)
@@ -253,37 +260,83 @@ struct CompletionView: View {
                         .lineLimit(1)
                 }
 
-                Text("Did you finish?")
-                    .font(.body)
+                if showKeepGoing {
+                    // "Keep going" flow
+                    VStack(spacing: 10) {
+                        Text("Add more time")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
 
-                HStack(spacing: 12) {
-                    Button("Yes \u{2713}") { finishSession(finished: true) }
+                        HStack(spacing: 8) {
+                            ForEach([15, 25, 45, 60], id: \.self) { mins in
+                                Button {
+                                    selectedMoreTime = mins
+                                } label: {
+                                    Text("\(mins)m")
+                                        .font(.system(.caption, design: .rounded, weight: .semibold))
+                                        .foregroundStyle(selectedMoreTime == mins ? .white : .secondary)
+                                        .frame(width: 44, height: 26)
+                                        .background(
+                                            selectedMoreTime == mins ? AnyShapeStyle(.orange) : AnyShapeStyle(.quaternary),
+                                            in: RoundedRectangle(cornerRadius: 6)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+
+                        Button(action: {
+                            if let s = session {
+                                appState.sessionHistory.record(s, finished: false, journal: appState.journalEntry)
+                            }
+                            appState.restartWithMoreTime(duration: selectedMoreTime)
+                        }) {
+                            Label("Keep going", systemImage: "flame.fill")
+                                .frame(maxWidth: .infinity)
+                        }
                         .buttonStyle(.borderedProminent)
-                        .tint(.green.opacity(0.8))
-                        .controlSize(.large)
+                        .tint(.orange)
+                        .controlSize(.regular)
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                } else {
+                    // Standard completion flow
+                    Text("Did you finish?")
+                        .font(.body)
 
-                    Button("Not yet") { finishSession(finished: false) }
+                    HStack(spacing: 12) {
+                        Button("Yes \u{2713}") { finishSession(finished: true) }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.green.opacity(0.8))
+                            .controlSize(.large)
+
+                        Button("Not yet") {
+                            withAnimation(.easeOut(duration: 0.3)) {
+                                showKeepGoing = true
+                            }
+                        }
                         .buttonStyle(.bordered)
                         .controlSize(.large)
-                }
+                    }
 
-                VStack(spacing: 6) {
-                    Text("How did it go?")
-                        .font(.caption)
+                    VStack(spacing: 6) {
+                        Text("How did it go?")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+
+                        TextField("One sentence...", text: $appState.journalEntry)
+                            .textFieldStyle(.plain)
+                            .font(.caption)
+                            .padding(6)
+                            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 5))
+                            .focused($isJournalFocused)
+                    }
+
+                    Button("Start another \u{2192}") { finishSession(finished: false) }
+                        .buttonStyle(.plain)
                         .foregroundStyle(.tertiary)
-
-                    TextField("One sentence...", text: $appState.journalEntry)
-                        .textFieldStyle(.plain)
-                        .font(.caption)
-                        .padding(6)
-                        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 5))
-                        .focused($isJournalFocused)
+                        .font(.subheadline)
                 }
-
-                Button("Start another \u{2192}") { finishSession(finished: false) }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.tertiary)
-                    .font(.subheadline)
 
                 if appState.sessionHistory.thisWeekCount > 0 {
                     Text("\(appState.sessionHistory.thisWeekCount) sessions this week \u{00B7} \(appState.sessionHistory.thisWeekMinutes) min")
@@ -292,7 +345,19 @@ struct CompletionView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .padding(.vertical, 12)
+        }
+        .onAppear {
+            // Celebration: fade in the focus time after a brief moment
+            withAnimation(.easeOut(duration: 0.8).delay(0.5)) {
+                textVisible = true
+            }
+            // End celebration pulse after 2s
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation(.easeInOut(duration: 1)) {
+                    celebrating = false
+                }
+            }
         }
     }
 
