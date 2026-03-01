@@ -286,7 +286,6 @@ struct CompletionView: View {
                 }
 
                 if showKeepGoing {
-                    // "Keep going" flow
                     VStack(spacing: 10) {
                         Text("Add more time")
                             .font(.caption)
@@ -325,17 +324,13 @@ struct CompletionView: View {
                     }
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 } else {
-                    // Standard completion flow
-                    Text("How\u{2019}d it go?")
-                        .font(.body)
-
                     HStack(spacing: 12) {
-                        Button("Yes \u{2713}") { finishSession(finished: true) }
+                        Button("Finished \u{2713}") { finishSession(finished: true) }
                             .buttonStyle(.borderedProminent)
                             .tint(.green.opacity(0.8))
                             .controlSize(.large)
 
-                        Button("Not yet") {
+                        Button("Need more time") {
                             withAnimation(.easeOut(duration: 0.3)) {
                                 showKeepGoing = true
                             }
@@ -356,11 +351,6 @@ struct CompletionView: View {
                             .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 5))
                             .focused($isJournalFocused)
                     }
-
-                    Button("Another round? \u{2192}") { finishSession(finished: false) }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.tertiary)
-                        .font(.subheadline)
                 }
 
                 if appState.sessionHistory.thisWeekCount > 0 {
