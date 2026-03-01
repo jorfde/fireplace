@@ -5,6 +5,7 @@ final class PanelController {
     private var panel: FloatingPanel?
     private let appState: AppState
     private let focusTimer: FocusTimer
+    private var clickMonitor: Any?
 
     init(appState: AppState, focusTimer: FocusTimer) {
         self.appState = appState
@@ -27,10 +28,12 @@ final class PanelController {
 
         positionPanel()
         panel?.makeKeyAndOrderFront(nil)
+        startClickMonitor()
     }
 
     func hidePanel() {
         panel?.orderOut(nil)
+        stopClickMonitor()
     }
 
     func togglePanel() {
@@ -38,6 +41,23 @@ final class PanelController {
             hidePanel()
         } else {
             showPanel()
+        }
+    }
+
+    private func startClickMonitor() {
+        stopClickMonitor()
+        clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            guard let self, let panel = self.panel, panel.isVisible else { return }
+            if !panel.frame.contains(NSEvent.mouseLocation) {
+                self.hidePanel()
+            }
+        }
+    }
+
+    private func stopClickMonitor() {
+        if let monitor = clickMonitor {
+            NSEvent.removeMonitor(monitor)
+            clickMonitor = nil
         }
     }
 
@@ -103,7 +123,7 @@ struct PanelContentView: View {
                 case .focusing:
                     FocusingView(appState: appState, focusTimer: focusTimer, onClose: onClose)
                 case .dyingDown:
-                    TransitionView(state: .dyingDown(progress: 0.5), label: "The fire is dying down...")
+                    TransitionView(state: .dyingDown(progress: 0.5), label: "Winding down\u{2026}")
                 case .completed:
                     CompletionView(appState: appState)
                 }
@@ -241,10 +261,7 @@ struct CompletionView: View {
 
             VStack(spacing: 10) {
                 VStack(spacing: 6) {
-                    Text("The fire has gone out")
-                        .font(.headline)
-
-                    Text("You focused for \(focusedMinutes) minute\(focusedMinutes == 1 ? "" : "s")")
+                    Text("Your fire burned for \(focusedMinutes) minute\(focusedMinutes == 1 ? "" : "s")")
                         .font(.system(.subheadline, design: .rounded, weight: .medium))
                         .foregroundStyle(.orange)
                         .opacity(textVisible ? 1 : 0)
@@ -297,7 +314,7 @@ struct CompletionView: View {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 } else {
                     // Standard completion flow
-                    Text("Did you finish?")
+                    Text("How\u{2019}d it go?")
                         .font(.body)
 
                     HStack(spacing: 12) {
@@ -316,7 +333,7 @@ struct CompletionView: View {
                     }
 
                     VStack(spacing: 6) {
-                        Text("How did it go?")
+                        Text("Any thoughts?")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
 
@@ -328,7 +345,7 @@ struct CompletionView: View {
                             .focused($isJournalFocused)
                     }
 
-                    Button("Start another \u{2192}") { finishSession(finished: false) }
+                    Button("Another round? \u{2192}") { finishSession(finished: false) }
                         .buttonStyle(.plain)
                         .foregroundStyle(.tertiary)
                         .font(.subheadline)

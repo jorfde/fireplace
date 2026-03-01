@@ -15,8 +15,17 @@ struct SetupView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Toolbar row — sits in the transparent title bar area
-            HStack {
+            HStack(spacing: 10) {
                 Spacer()
+
+                Button(action: { appState.soundEnabled.toggle() }) {
+                    Image(systemName: appState.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .help(appState.soundEnabled ? "Sound on" : "Sound off")
+
                 if !appState.sessionHistory.sessions.isEmpty, let onShowHistory {
                     Button(action: { onShowHistory() }) {
                         Image(systemName: "book.fill")
@@ -39,7 +48,7 @@ struct SetupView: View {
 
             VStack(spacing: 16) {
                 VStack(spacing: 10) {
-                    Text("What are you working on?")
+                    Text("What\u{2019}s on your mind?")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
