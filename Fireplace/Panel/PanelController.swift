@@ -43,11 +43,38 @@ final class PanelController {
         guard let screen = NSScreen.main else { return }
         let screenFrame = screen.frame
         let visibleFrame = screen.visibleFrame
-        let panelSize = panel?.frame.size ?? NSSize(width: 280, height: 360)
+        let panelSize = panel?.frame.size ?? NSSize(width: 280, height: 380)
 
-        let dockHeight = visibleFrame.minY - screenFrame.minY
-        let x = screenFrame.midX - panelSize.width / 2
-        let y = screenFrame.minY + dockHeight + 20
+        // Determine Dock position and place panel above the app's Dock icon.
+        // Use mouse location as a proxy — applicationShouldHandleReopen fires from
+        // a Dock click, so the cursor is over the icon at that moment.
+        let mouseLocation = NSEvent.mouseLocation
+
+        let dockOnBottom = visibleFrame.minY > screenFrame.minY + 4
+        let dockOnLeft = visibleFrame.minX > screenFrame.minX + 4
+        let dockOnRight = visibleFrame.maxX < screenFrame.maxX - 4
+
+        var x: CGFloat
+        var y: CGFloat
+
+        if dockOnBottom {
+            x = mouseLocation.x - panelSize.width / 2
+            y = visibleFrame.minY + 8
+        } else if dockOnLeft {
+            x = visibleFrame.minX + 8
+            y = mouseLocation.y - panelSize.height / 2
+        } else if dockOnRight {
+            x = visibleFrame.maxX - panelSize.width - 8
+            y = mouseLocation.y - panelSize.height / 2
+        } else {
+            // Fallback: bottom-center
+            x = screenFrame.midX - panelSize.width / 2
+            y = screenFrame.minY + 80
+        }
+
+        // Clamp to screen bounds
+        x = max(screenFrame.minX + 8, min(x, screenFrame.maxX - panelSize.width - 8))
+        y = max(screenFrame.minY + 8, min(y, screenFrame.maxY - panelSize.height - 8))
 
         panel?.setFrameOrigin(NSPoint(x: x, y: y))
     }
