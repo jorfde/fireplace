@@ -118,15 +118,17 @@ struct TransitionView: View {
     let label: String
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 0) {
             FireplaceCanvasView(state: state)
-                .frame(width: 160, height: 160)
+                .frame(maxWidth: .infinity)
+                .frame(height: 150)
+                .clipped()
 
             Text(label)
                 .font(.headline)
                 .foregroundStyle(.secondary)
+                .padding(20)
         }
-        .padding(24)
     }
 }
 
@@ -146,56 +148,61 @@ struct FocusingView: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 0) {
             FireplaceCanvasView(
                 state: .burning,
                 showMarshmallow: appState.isMarshmallow,
                 streakDays: appState.streakDays,
                 timeProgress: focusTimer.progress
             )
-            .frame(width: 140, height: 140)
+            .frame(maxWidth: .infinity)
+            .frame(height: 150)
+            .clipped()
 
-            VStack(spacing: 4) {
-                Text("Your current task is")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
+            VStack(spacing: 12) {
+                VStack(spacing: 4) {
+                    Text("Your current task is")
+                        .font(.subheadline)
+                        .foregroundStyle(.tertiary)
 
-                Text(taskName)
-                    .font(.headline)
-                    .lineLimit(1)
+                    Text(taskName)
+                        .font(.headline)
+                        .lineLimit(1)
+                }
+
+                ZStack {
+                    Circle()
+                        .stroke(.quaternary, lineWidth: 3)
+                        .frame(width: 52, height: 52)
+
+                    Circle()
+                        .trim(from: 0, to: focusTimer.progress)
+                        .stroke(.orange, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .frame(width: 52, height: 52)
+                        .rotationEffect(.degrees(-90))
+
+                    Text(timeString)
+                        .font(.system(.caption2, design: .monospaced, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+
+                Button("Extinguish early") {
+                    appState.extinguishEarly()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .foregroundStyle(.secondary)
+
+                Button("Hide") {
+                    onClose()
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.tertiary)
+                .font(.subheadline)
             }
-
-            ZStack {
-                Circle()
-                    .stroke(.quaternary, lineWidth: 3)
-                    .frame(width: 52, height: 52)
-
-                Circle()
-                    .trim(from: 0, to: focusTimer.progress)
-                    .stroke(.orange, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .frame(width: 52, height: 52)
-                    .rotationEffect(.degrees(-90))
-
-                Text(timeString)
-                    .font(.system(.caption2, design: .monospaced, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-
-            Button("Extinguish early") {
-                appState.extinguishEarly()
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .foregroundStyle(.secondary)
-
-            Button("Hide") {
-                onClose()
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.tertiary)
-            .font(.subheadline)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
         }
-        .padding(20)
     }
 }
 
@@ -219,63 +226,68 @@ struct CompletionView: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 0) {
             FireplaceCanvasView(state: .embers, streakDays: appState.streakDays)
-                .frame(width: 130, height: 130)
+                .frame(maxWidth: .infinity)
+                .frame(height: 130)
+                .clipped()
 
-            VStack(spacing: 6) {
-                Text("The fire has gone out")
-                    .font(.headline)
+            VStack(spacing: 12) {
+                VStack(spacing: 6) {
+                    Text("The fire has gone out")
+                        .font(.headline)
 
-                Text("You focused for \(focusedMinutes) minute\(focusedMinutes == 1 ? "" : "s")")
+                    Text("You focused for \(focusedMinutes) minute\(focusedMinutes == 1 ? "" : "s")")
+                        .font(.subheadline)
+                        .foregroundStyle(.orange)
+
+                    Text("\u{201C}\(taskName)\u{201D}")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Text("Did you finish?")
+                    .font(.body)
+
+                HStack(spacing: 12) {
+                    Button("Yes \u{2713}") { finishSession(finished: true) }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green.opacity(0.8))
+                        .controlSize(.large)
+
+                    Button("Not yet") { finishSession(finished: false) }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                }
+
+                VStack(spacing: 6) {
+                    Text("How did it go?")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+
+                    TextField("One sentence...", text: $appState.journalEntry)
+                        .textFieldStyle(.plain)
+                        .font(.caption)
+                        .padding(6)
+                        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 5))
+                        .focused($isJournalFocused)
+                }
+
+                Button("Start another \u{2192}") { finishSession(finished: false) }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tertiary)
                     .font(.subheadline)
-                    .foregroundStyle(.orange)
 
-                Text("\u{201C}\(taskName)\u{201D}")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                if appState.sessionHistory.thisWeekCount > 0 {
+                    Text("\(appState.sessionHistory.thisWeekCount) sessions this week \u{00B7} \(appState.sessionHistory.thisWeekMinutes) min")
+                        .font(.system(.caption2, design: .rounded))
+                        .foregroundStyle(.tertiary)
+                }
             }
-
-            Text("Did you finish?")
-                .font(.body)
-
-            HStack(spacing: 12) {
-                Button("Yes \u{2713}") { finishSession(finished: true) }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green.opacity(0.8))
-                    .controlSize(.large)
-
-                Button("Not yet") { finishSession(finished: false) }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-            }
-
-            VStack(spacing: 6) {
-                Text("How did it go?")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-
-                TextField("One sentence...", text: $appState.journalEntry)
-                    .textFieldStyle(.plain)
-                    .font(.caption)
-                    .padding(6)
-                    .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 5))
-                    .focused($isJournalFocused)
-            }
-
-            Button("Start another \u{2192}") { finishSession(finished: false) }
-                .buttonStyle(.plain)
-                .foregroundStyle(.tertiary)
-                .font(.subheadline)
-
-            if appState.sessionHistory.thisWeekCount > 0 {
-                Text("\(appState.sessionHistory.thisWeekCount) sessions this week \u{00B7} \(appState.sessionHistory.thisWeekMinutes) min")
-                    .font(.system(.caption2, design: .rounded))
-                    .foregroundStyle(.tertiary)
-            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
         }
-        .padding(18)
     }
 
     private func finishSession(finished: Bool) {
