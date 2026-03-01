@@ -48,7 +48,7 @@ struct PixelTextField: View {
     var isFocused: FocusState<Bool>.Binding? = nil
 
     var body: some View {
-        TextField(placeholder, text: $text)
+        TextField("", text: $text, prompt: Text(placeholder).foregroundColor(PixelTheme.textDim))
             .textFieldStyle(.plain)
             .font(.system(size: 13, weight: .medium, design: .monospaced))
             .foregroundStyle(PixelTheme.text)

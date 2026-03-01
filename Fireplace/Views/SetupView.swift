@@ -18,7 +18,7 @@ struct SetupView: View {
                 Spacer()
                 if !appState.sessionHistory.sessions.isEmpty, let onShowHistory {
                     Button(action: { onShowHistory() }) {
-                        PixelText(text: "...", pixelSize: 1.5, color: PixelTheme.textDim)
+                        PixelText(text: "LOG", pixelSize: 1.5, color: PixelTheme.textDim)
                     }
                     .buttonStyle(.plain)
                     .help("Session history")
