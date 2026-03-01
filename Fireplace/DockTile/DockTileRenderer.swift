@@ -42,32 +42,20 @@ final class DockTileRenderer {
 
     private func renderFrame() {
         let image = renderFireplaceToImage()
-        let imageView = NSImageView(image: image)
-        NSApp.dockTile.contentView = imageView
-        NSApp.dockTile.display()
+        NSApp.applicationIconImage = image
     }
 
     private func renderFireplaceToImage() -> NSImage {
-        let tileSize = CGSize(width: 128, height: 128)
-        let canvasSize: CGFloat = 96
+        let size: CGFloat = 128
         let renderer = ImageRenderer(content:
             FireplaceCanvasView(state: currentState, showMarshmallow: showMarshmallow, streakDays: streakDays)
-                .frame(width: canvasSize, height: canvasSize)
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .frame(width: size, height: size)
         )
         renderer.scale = 2.0
 
-        let finalImage = NSImage(size: tileSize)
-        finalImage.lockFocus()
-
         if let cgImage = renderer.cgImage {
-            let insetImage = NSImage(cgImage: cgImage, size: CGSize(width: canvasSize, height: canvasSize))
-            let origin = NSPoint(x: (tileSize.width - canvasSize) / 2, y: (tileSize.height - canvasSize) / 2)
-            insetImage.draw(in: NSRect(origin: origin, size: CGSize(width: canvasSize, height: canvasSize)))
+            return NSImage(cgImage: cgImage, size: CGSize(width: size, height: size))
         }
-
-        finalImage.isTemplate = false
-        finalImage.unlockFocus()
-        return finalImage
+        return NSImage(size: CGSize(width: size, height: size))
     }
 }
