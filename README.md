@@ -1,9 +1,10 @@
-<p align="center">
-  <img src="assets/banner.png" alt="Fireplace" width="600" />
-</p>
+<div align="center">
+    <img src="assets/icon.png" width=200 height=200>
+    <h1>Fireplace</h1>
+</div>
 
 <p align="center">
-  <strong>A tiny cozy focus timer that lives in your macOS Dock.</strong>
+  A tiny cozy focus timer that lives in your macOS Dock.
 </p>
 
 <p align="center">
