@@ -29,6 +29,7 @@ struct SetupView: View {
             }
             .padding(.horizontal, 12)
             .frame(height: 20)
+            .padding(.bottom, 8)
 
             FireplaceCanvasView(state: .idle, streakDays: appState.streakDays)
                 .frame(maxWidth: .infinity)
