@@ -45,6 +45,14 @@ final class AppState {
         }
     }
 
+    var currentSession: FocusSession? {
+        switch phase {
+        case .lightingUp(let s), .focusing(let s), .dyingDown(let s), .completed(let s):
+            return s
+        case .idle: return nil
+        }
+    }
+
     var isMarshmallow: Bool {
         currentTaskName?.lowercased().contains("marshmallow") == true
     }

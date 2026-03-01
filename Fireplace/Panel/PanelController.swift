@@ -213,6 +213,11 @@ struct CompletionView: View {
         return nil
     }
 
+    private var focusedMinutes: Int {
+        guard let s = session else { return 0 }
+        return Int(min(Date.now.timeIntervalSince(s.startTime), s.duration) / 60)
+    }
+
     var body: some View {
         VStack(spacing: 14) {
             FireplaceCanvasView(state: .embers, streakDays: appState.streakDays)
@@ -222,8 +227,12 @@ struct CompletionView: View {
                 Text("The fire has gone out")
                     .font(.headline)
 
-                Text("\u{201C}\(taskName)\u{201D}")
+                Text("You focused for \(focusedMinutes) minute\(focusedMinutes == 1 ? "" : "s")")
                     .font(.subheadline)
+                    .foregroundStyle(.orange)
+
+                Text("\u{201C}\(taskName)\u{201D}")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }

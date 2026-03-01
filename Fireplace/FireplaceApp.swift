@@ -126,6 +126,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         false
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        switch appState.phase {
+        case .lightingUp, .focusing, .dyingDown:
+            let alert = NSAlert()
+            alert.messageText = "You have an active session"
+            alert.informativeText = "Quitting will extinguish your fire and end the current session."
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "Extinguish & Quit")
+            alert.addButton(withTitle: "Cancel")
+
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                if let session = appState.currentSession {
+                    appState.sessionHistory.record(session, finished: false, journal: "")
+                }
+                return .terminateNow
+            }
+            return .terminateCancel
+        default:
+            return .terminateNow
+        }
+    }
+
     // MARK: - Dock menu
 
     private func setupDockMenu() {
