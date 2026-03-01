@@ -57,7 +57,6 @@ struct SetupView: View {
 
                 PixelButton(label: "Light the fire", color: PixelTheme.accent, pixelSize: 2, fullWidth: true) {
                     appState.startSession()
-                    onStart()
                 }
 
                 if appState.streakDays > 0 {
